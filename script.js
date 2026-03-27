@@ -754,7 +754,6 @@ window.addNewProduct = async function(event) {
     const productNumber = document.getElementById('product-number').value;
     let imageUrl = document.getElementById('product-image-url').value;
     
-    // If product number provided and no image URL, generate the URL
     if (productNumber && !imageUrl) {
         imageUrl = `/images/product${productNumber}.jpg`;
     }
