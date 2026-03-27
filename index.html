@@ -19,8 +19,8 @@
             <span><i class="fas fa-phone-alt"></i> 24/7 Support: 0741 842 196</span>
         </div>
         <div class="top-bar-right">
-            <a href="#" id="cart-link-top"><i class="fas fa-shopping-cart"></i> Cart (<span id="cart-count-top">0</span>)</a>
-            <a href="#"><i class="fas fa-user"></i> Account</a>
+            <a href="#" id="cart-link-top" onclick="openCartModal(event)"><i class="fas fa-shopping-cart"></i> Cart (<span id="cart-count-top">0</span>)</a>
+            <a href="#" id="account-link" onclick="showAccountMenu(event)"><i class="fas fa-user"></i> Account</a>
         </div>
     </div>
 </div>
@@ -29,7 +29,7 @@
 <header>
     <div class="container header-container">
         <div class="logo">
-            <a href="#home">
+            <a href="#" onclick="scrollToHome(event)">
                 <h1>YETU<span>Electronics</span></h1>
                 <small>Eldoret's Best Electronics Store</small>
             </a>
@@ -41,12 +41,12 @@
         </div>
         
         <div class="header-actions">
-            <div class="location-picker">
+            <div class="location-picker" onclick="showLocationInfo(event)">
                 <i class="fas fa-map-marker-alt"></i>
                 <span>Eldoret</span>
                 <i class="fas fa-chevron-down"></i>
             </div>
-            <div class="cart-icon" id="cart-icon">
+            <div class="cart-icon" id="cart-icon" onclick="openCartModal(event)">
                 <i class="fas fa-shopping-cart"></i>
                 <span class="cart-count" id="cart-count-header">0</span>
             </div>
@@ -63,13 +63,13 @@
 <nav class="category-nav" id="category-nav">
     <div class="container">
         <ul class="category-menu">
-            <li><a href="#" data-category="all" class="active"><i class="fas fa-th-large"></i> All Products</a></li>
-            <li><a href="#" data-category="phones"><i class="fas fa-mobile-alt"></i> Phones</a></li>
-            <li><a href="#" data-category="laptops"><i class="fas fa-laptop"></i> Laptops</a></li>
-            <li><a href="#" data-category="tvs"><i class="fas fa-tv"></i> TVs</a></li>
-            <li><a href="#" data-category="audio"><i class="fas fa-headphones"></i> Audio</a></li>
-            <li><a href="#" data-category="accessories"><i class="fas fa-plug"></i> Accessories</a></li>
-            <li><a href="#" data-category="gaming"><i class="fas fa-gamepad"></i> Gaming</a></li>
+            <li><a href="#" data-category="all" class="active" onclick="filterByCategory(event, 'all')"><i class="fas fa-th-large"></i> All Products</a></li>
+            <li><a href="#" data-category="phones" onclick="filterByCategory(event, 'phones')"><i class="fas fa-mobile-alt"></i> Phones</a></li>
+            <li><a href="#" data-category="laptops" onclick="filterByCategory(event, 'laptops')"><i class="fas fa-laptop"></i> Laptops</a></li>
+            <li><a href="#" data-category="tvs" onclick="filterByCategory(event, 'tvs')"><i class="fas fa-tv"></i> TVs</a></li>
+            <li><a href="#" data-category="audio" onclick="filterByCategory(event, 'audio')"><i class="fas fa-headphones"></i> Audio</a></li>
+            <li><a href="#" data-category="accessories" onclick="filterByCategory(event, 'accessories')"><i class="fas fa-plug"></i> Accessories</a></li>
+            <li><a href="#" data-category="gaming" onclick="filterByCategory(event, 'gaming')"><i class="fas fa-gamepad"></i> Gaming</a></li>
         </ul>
     </div>
 </nav>
@@ -81,7 +81,7 @@
             <div class="hero-content">
                 <h2>Big Tech Sale!</h2>
                 <p>Up to 40% off on selected electronics</p>
-                <button class="shop-now-btn">Shop Now</button>
+                <button class="shop-now-btn" onclick="scrollToProducts(event)">Shop Now</button>
             </div>
             <div class="hero-bg" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
         </div>
@@ -89,7 +89,7 @@
             <div class="hero-content">
                 <h2>Latest Smartphones</h2>
                 <p>Get the newest arrivals at best prices</p>
-                <button class="shop-now-btn">Explore Phones</button>
+                <button class="shop-now-btn" onclick="filterByCategory(event, 'phones')">Explore Phones</button>
             </div>
             <div class="hero-bg" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"></div>
         </div>
@@ -97,7 +97,7 @@
             <div class="hero-content">
                 <h2>Free Delivery Eldoret</h2>
                 <p>On orders above KSh 5,000 across Eldoret</p>
-                <button class="shop-now-btn">Shop Now</button>
+                <button class="shop-now-btn" onclick="scrollToProducts(event)">Shop Now</button>
             </div>
             <div class="hero-bg" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);"></div>
         </div>
@@ -126,35 +126,35 @@
     <div class="container">
         <div class="section-header">
             <h3><i class="fas fa-tags"></i> Shop by Category</h3>
-            <a href="#" class="view-all">View All <i class="fas fa-arrow-right"></i></a>
+            <a href="#" class="view-all" onclick="filterByCategory(event, 'all')">View All <i class="fas fa-arrow-right"></i></a>
         </div>
         <div class="categories-grid">
-            <div class="category-card" data-cat="phones">
+            <div class="category-card" data-cat="phones" onclick="filterByCategory(event, 'phones')">
                 <i class="fas fa-mobile-alt"></i>
                 <h4>Phones</h4>
                 <p>200+ products</p>
             </div>
-            <div class="category-card" data-cat="laptops">
+            <div class="category-card" data-cat="laptops" onclick="filterByCategory(event, 'laptops')">
                 <i class="fas fa-laptop"></i>
                 <h4>Laptops</h4>
                 <p>150+ products</p>
             </div>
-            <div class="category-card" data-cat="tvs">
+            <div class="category-card" data-cat="tvs" onclick="filterByCategory(event, 'tvs')">
                 <i class="fas fa-tv"></i>
                 <h4>TVs</h4>
                 <p>80+ products</p>
             </div>
-            <div class="category-card" data-cat="audio">
+            <div class="category-card" data-cat="audio" onclick="filterByCategory(event, 'audio')">
                 <i class="fas fa-headphones"></i>
                 <h4>Audio</h4>
                 <p>120+ products</p>
             </div>
-            <div class="category-card" data-cat="accessories">
+            <div class="category-card" data-cat="accessories" onclick="filterByCategory(event, 'accessories')">
                 <i class="fas fa-plug"></i>
                 <h4>Accessories</h4>
                 <p>300+ products</p>
             </div>
-            <div class="category-card" data-cat="gaming">
+            <div class="category-card" data-cat="gaming" onclick="filterByCategory(event, 'gaming')">
                 <i class="fas fa-gamepad"></i>
                 <h4>Gaming</h4>
                 <p>60+ products</p>
@@ -169,11 +169,11 @@
         <div class="section-header">
             <h3><i class="fas fa-star"></i> Featured Products</h3>
             <div class="filter-buttons">
-                <button class="filter-btn active" data-filter="all">All</button>
-                <button class="filter-btn" data-filter="phones">Phones</button>
-                <button class="filter-btn" data-filter="laptops">Laptops</button>
-                <button class="filter-btn" data-filter="tvs">TVs</button>
-                <button class="filter-btn" data-filter="audio">Audio</button>
+                <button class="filter-btn active" data-filter="all" onclick="filterByFilterBtn(event, 'all')">All</button>
+                <button class="filter-btn" data-filter="phones" onclick="filterByFilterBtn(event, 'phones')">Phones</button>
+                <button class="filter-btn" data-filter="laptops" onclick="filterByFilterBtn(event, 'laptops')">Laptops</button>
+                <button class="filter-btn" data-filter="tvs" onclick="filterByFilterBtn(event, 'tvs')">TVs</button>
+                <button class="filter-btn" data-filter="audio" onclick="filterByFilterBtn(event, 'audio')">Audio</button>
             </div>
         </div>
         <div class="products-grid" id="featured-products"></div>
@@ -241,7 +241,7 @@
             <i class="fas fa-envelope"></i>
             <h3>Subscribe to our newsletter</h3>
             <p>Get the latest deals and exclusive offers</p>
-            <form id="newsletter-form">
+            <form id="newsletter-form" onsubmit="handleNewsletterSubmit(event)">
                 <input type="email" placeholder="Enter your email address" required>
                 <button type="submit">Subscribe</button>
             </form>
@@ -257,38 +257,38 @@
                 <h3>YETU<span>Electronics</span></h3>
                 <p>Your trusted electronics store in Eldoret. Quality products at the best prices.</p>
                 <div class="social-links">
-                    <a href="#"><i class="fab fa-facebook-f"></i></a>
-                    <a href="#"><i class="fab fa-twitter"></i></a>
-                    <a href="#"><i class="fab fa-instagram"></i></a>
-                    <a href="#"><i class="fab fa-whatsapp"></i></a>
+                    <a href="https://facebook.com/yetuelectronics" target="_blank" rel="noopener noreferrer"><i class="fab fa-facebook-f"></i></a>
+                    <a href="https://twitter.com/yetuelectronics" target="_blank" rel="noopener noreferrer"><i class="fab fa-twitter"></i></a>
+                    <a href="https://instagram.com/yetuelectronics" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram"></i></a>
+                    <a href="https://wa.me/254741842196" target="_blank" rel="noopener noreferrer"><i class="fab fa-whatsapp"></i></a>
                 </div>
             </div>
             <div class="footer-col">
                 <h4>Customer Service</h4>
                 <ul>
-                    <li><a href="#">Contact Us</a></li>
-                    <li><a href="#">FAQs</a></li>
-                    <li><a href="#">Returns Policy</a></li>
-                    <li><a href="#">Shipping Info</a></li>
-                    <li><a href="#">Payment Methods</a></li>
+                    <li><a href="#" onclick="showContactPage(event)">Contact Us</a></li>
+                    <li><a href="#" onclick="showFAQs(event)">FAQs</a></li>
+                    <li><a href="#" onclick="showReturnsPolicy(event)">Returns Policy</a></li>
+                    <li><a href="#" onclick="showShippingInfo(event)">Shipping Info</a></li>
+                    <li><a href="#" onclick="showPaymentMethods(event)">Payment Methods</a></li>
                 </ul>
             </div>
             <div class="footer-col">
                 <h4>Shop</h4>
                 <ul>
-                    <li><a href="#" data-category="phones">Phones</a></li>
-                    <li><a href="#" data-category="laptops">Laptops</a></li>
-                    <li><a href="#" data-category="tvs">TVs</a></li>
-                    <li><a href="#" data-category="audio">Audio</a></li>
-                    <li><a href="#" data-category="gaming">Gaming</a></li>
+                    <li><a href="#" data-category="phones" onclick="filterByCategory(event, 'phones')">Phones</a></li>
+                    <li><a href="#" data-category="laptops" onclick="filterByCategory(event, 'laptops')">Laptops</a></li>
+                    <li><a href="#" data-category="tvs" onclick="filterByCategory(event, 'tvs')">TVs</a></li>
+                    <li><a href="#" data-category="audio" onclick="filterByCategory(event, 'audio')">Audio</a></li>
+                    <li><a href="#" data-category="gaming" onclick="filterByCategory(event, 'gaming')">Gaming</a></li>
                 </ul>
             </div>
             <div class="footer-col">
                 <h4>Contact Info</h4>
                 <ul class="contact-info">
-                    <li><i class="fas fa-map-marker-alt"></i> Eldoret, Kenya</li>
-                    <li><i class="fas fa-phone"></i> 0741 842 196</li>
-                    <li><i class="fas fa-envelope"></i> sales@yetu.com</li>
+                    <li onclick="showLocationOnMap(event)" style="cursor: pointer;"><i class="fas fa-map-marker-alt"></i> Eldoret, Kenya</li>
+                    <li onclick="makePhoneCall(event)" style="cursor: pointer;"><i class="fas fa-phone"></i> 0741 842 196</li>
+                    <li onclick="sendEmail(event)" style="cursor: pointer;"><i class="fas fa-envelope"></i> sales@yetu.com</li>
                 </ul>
                 <div class="payment-methods">
                     <i class="fas fa-mobile-alt"></i>
@@ -307,7 +307,7 @@
     <div class="cart-modal-content">
         <div class="cart-header">
             <h3><i class="fas fa-shopping-cart"></i> Your Cart</h3>
-            <span class="cart-close">&times;</span>
+            <span class="cart-close" onclick="closeCartModal()">&times;</span>
         </div>
         <div id="cart-items" class="cart-items"></div>
         <div class="cart-summary">
@@ -323,7 +323,7 @@
                 <span>Total:</span>
                 <span id="cart-total">KSh 0</span>
             </div>
-            <button id="checkout-btn" class="checkout-btn">Proceed to Checkout</button>
+            <button id="checkout-btn" class="checkout-btn" onclick="proceedToCheckout()">Proceed to Checkout</button>
         </div>
     </div>
 </div>
@@ -333,7 +333,7 @@
     <div class="checkout-modal-content">
         <div class="checkout-header">
             <h3><i class="fas fa-mobile-alt"></i> M-Pesa Payment</h3>
-            <span class="checkout-close">&times;</span>
+            <span class="checkout-close" onclick="closeCheckoutModal()">&times;</span>
         </div>
         <div class="checkout-body">
             <div class="order-summary">
@@ -356,7 +356,7 @@
                     <input type="tel" id="checkout-phone" placeholder="e.g., 0712345678" class="phone-input">
                     <p class="phone-hint">Format: 0712345678 or 254712345678</p>
                     
-                    <button id="stk-push-checkout" class="stk-btn">
+                    <button id="stk-push-checkout" class="stk-btn" onclick="initiateMpesaPayment()">
                         <i class="fas fa-mobile-alt"></i> Pay with M-Pesa
                     </button>
                     
@@ -367,12 +367,12 @@
     </div>
 </div>
 
-<!-- Admin Panel - Hidden by default, requires login -->
+<!-- Admin Panel -->
 <div id="admin-panel-overlay" class="admin-panel-overlay" style="display: none;">
     <div class="admin-panel">
         <div class="admin-header">
             <h3><i class="fas fa-cog"></i> Admin Panel</h3>
-            <button id="close-admin" class="close-admin"><i class="fas fa-times"></i></button>
+            <button id="close-admin" class="close-admin" onclick="closeAdminPanel()"><i class="fas fa-times"></i></button>
         </div>
         
         <!-- Login Form -->
@@ -382,7 +382,7 @@
                 <h4>Admin Access Required</h4>
                 <input type="text" id="admin-username" placeholder="Username" class="admin-input">
                 <input type="password" id="admin-password" placeholder="Password" class="admin-input">
-                <button id="admin-login-btn" class="admin-login-submit">Login</button>
+                <button id="admin-login-btn" class="admin-login-submit" onclick="adminLogin()">Login</button>
                 <div id="admin-login-error" class="admin-error"></div>
             </div>
         </div>
@@ -390,15 +390,15 @@
         <!-- Admin Content (hidden until login) -->
         <div id="admin-content" style="display: none;">
             <div class="admin-tabs">
-                <button class="admin-tab active" data-tab="add-product">Add Product</button>
-                <button class="admin-tab" data-tab="manage-products">Manage Products</button>
-                <button class="admin-tab" data-tab="upload-images">Upload Images</button>
+                <button class="admin-tab active" data-tab="add-product" onclick="switchAdminTab('add-product')">Add Product</button>
+                <button class="admin-tab" data-tab="manage-products" onclick="switchAdminTab('manage-products')">Manage Products</button>
+                <button class="admin-tab" data-tab="upload-images" onclick="switchAdminTab('upload-images')">Upload Images</button>
             </div>
             
             <!-- Add Product Tab -->
             <div id="add-product" class="admin-tab-content active">
                 <h4>Add New Product</h4>
-                <form id="add-product-form" enctype="multipart/form-data">
+                <form id="add-product-form" enctype="multipart/form-data" onsubmit="addNewProduct(event)">
                     <div class="form-group">
                         <label>Product Name:</label>
                         <input type="text" id="product-name" required>
@@ -429,8 +429,13 @@
                     
                     <div class="form-group">
                         <label>Product Image:</label>
-                        <input type="file" id="product-image" accept="image/*">
+                        <input type="file" id="product-image" accept="image/*" onchange="previewProductImage(this)">
                         <div id="image-preview" class="image-preview"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Description:</label>
+                        <textarea id="product-description" rows="3"></textarea>
                     </div>
                     
                     <div class="form-group checkbox">
@@ -452,10 +457,10 @@
             <!-- Upload Images Tab -->
             <div id="upload-images" class="admin-tab-content">
                 <h4>Upload Multiple Images</h4>
-                <form id="bulk-upload-form" enctype="multipart/form-data">
+                <form id="bulk-upload-form" enctype="multipart/form-data" onsubmit="uploadMultipleImages(event)">
                     <div class="form-group">
                         <label>Select Images (max 5MB each):</label>
-                        <input type="file" id="bulk-images" accept="image/*" multiple>
+                        <input type="file" id="bulk-images" accept="image/*" multiple onchange="previewBulkImages(this)">
                         <div id="bulk-preview" class="bulk-preview"></div>
                     </div>
                     <button type="submit" class="submit-btn">Upload Images</button>
@@ -467,102 +472,10 @@
 </div>
 
 <!-- Admin Trigger Button -->
-<button id="admin-trigger-btn" class="admin-trigger-btn">
+<button id="admin-trigger-btn" class="admin-trigger-btn" onclick="openAdminPanel()">
     <i class="fas fa-user-shield"></i>
 </button>
 
 <script src="script.js"></script>
 </body>
-</html><!-- Admin Panel Section - Only visible when logged in -->
-<section id="admin-panel" class="admin-panel" style="display: none;">
-    <div class="container">
-        <div class="admin-header">
-            <h3><i class="fas fa-cog"></i> Admin Panel</h3>
-            <button id="close-admin" class="close-admin"><i class="fas fa-times"></i></button>
-        </div>
-        
-        <div class="admin-tabs">
-            <button class="admin-tab active" data-tab="add-product">Add Product</button>
-            <button class="admin-tab" data-tab="manage-products">Manage Products</button>
-            <button class="admin-tab" data-tab="upload-images">Upload Images</button>
-        </div>
-        
-        <!-- Add Product Tab -->
-        <div id="add-product" class="admin-tab-content active">
-            <h4>Add New Product</h4>
-            <form id="add-product-form" enctype="multipart/form-data">
-                <div class="form-group">
-                    <label>Product Name:</label>
-                    <input type="text" id="product-name" required>
-                </div>
-                
-                <div class="form-group">
-                    <label>Category:</label>
-                    <select id="product-category">
-                        <option value="phones">Phones</option>
-                        <option value="laptops">Laptops</option>
-                        <option value="tvs">TVs</option>
-                        <option value="audio">Audio</option>
-                        <option value="accessories">Accessories</option>
-                        <option value="gaming">Gaming</option>
-                    </select>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Price (KSh):</label>
-                        <input type="number" id="product-price" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Old Price (KSh):</label>
-                        <input type="number" id="product-old-price" placeholder="Optional">
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label>Product Image:</label>
-                    <input type="file" id="product-image" accept="image/*">
-                    <div id="image-preview" class="image-preview"></div>
-                </div>
-                
-                <div class="form-group">
-                    <label>Description:</label>
-                    <textarea id="product-description" rows="3"></textarea>
-                </div>
-                
-                <div class="form-group checkbox">
-                    <label>
-                        <input type="checkbox" id="product-flash"> Flash Sale Item
-                    </label>
-                </div>
-                
-                <button type="submit" class="submit-btn">Add Product</button>
-            </form>
-        </div>
-        
-        <!-- Manage Products Tab -->
-        <div id="manage-products" class="admin-tab-content">
-            <h4>Manage Products</h4>
-            <div id="products-list" class="products-list"></div>
-        </div>
-        
-        <!-- Upload Images Tab -->
-        <div id="upload-images" class="admin-tab-content">
-            <h4>Upload Multiple Images</h4>
-            <form id="bulk-upload-form" enctype="multipart/form-data">
-                <div class="form-group">
-                    <label>Select Images (max 5MB each):</label>
-                    <input type="file" id="bulk-images" accept="image/*" multiple>
-                    <div id="bulk-preview" class="bulk-preview"></div>
-                </div>
-                <button type="submit" class="submit-btn">Upload Images</button>
-            </form>
-            <div id="uploaded-images" class="uploaded-images"></div>
-        </div>
-    </div>
-</section>
-
-<!-- Admin Login Button -->
-<button id="admin-login-btn" class="admin-login-btn">
-    <i class="fas fa-lock"></i> Admin
-</button>
+</html>
