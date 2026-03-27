@@ -1,0 +1,12 @@
+{
+  "name": "yetu-electronics",
+  "version": "1.0.0",
+  "description": "Yetu Electronics - Premium Electronics Ecommerce Store",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
