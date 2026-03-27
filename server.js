@@ -74,11 +74,27 @@ if (!fs.existsSync(imagesDir)) {
   console.log('📁 Created images directory');
 }
 
+// Load products from file on server start
 try {
   if (fs.existsSync(PRODUCTS_FILE)) {
     const data = fs.readFileSync(PRODUCTS_FILE, 'utf8');
     products = JSON.parse(data);
     console.log(`✅ Loaded ${products.length} products from database`);
+    
+    // Verify images exist for each product
+    let missingImages = 0;
+    products.forEach(product => {
+      if (product.image && product.image.startsWith('/images/')) {
+        const imagePath = path.join(__dirname, product.image);
+        if (!fs.existsSync(imagePath)) {
+          console.log(`⚠️ Warning: Image not found for product: ${product.name} (${product.image})`);
+          missingImages++;
+        }
+      }
+    });
+    if (missingImages > 0) {
+      console.log(`⚠️ ${missingImages} products have missing images`);
+    }
   } else {
     products = [];
     fs.writeFileSync(PRODUCTS_FILE, JSON.stringify(products, null, 2));
@@ -90,7 +106,14 @@ try {
 }
 
 function saveProducts() {
-  fs.writeFileSync(PRODUCTS_FILE, JSON.stringify(products, null, 2));
+  try {
+    fs.writeFileSync(PRODUCTS_FILE, JSON.stringify(products, null, 2));
+    console.log(`💾 Saved ${products.length} products to database`);
+    return true;
+  } catch (error) {
+    console.error('Error saving products:', error);
+    return false;
+  }
 }
 
 // ============================================
@@ -139,12 +162,29 @@ app.post('/api/admin/logout', (req, res) => {
 // ============================================
 
 app.get('/api/products', (req, res) => {
-  res.json(products);
+  // Return products with validation that images exist
+  const validProducts = products.map(product => {
+    if (product.image && product.image.startsWith('/images/')) {
+      const imagePath = path.join(__dirname, product.image);
+      if (!fs.existsSync(imagePath)) {
+        // Image missing, return a copy without image or with placeholder
+        return { ...product, image: null, imageMissing: true };
+      }
+    }
+    return product;
+  });
+  res.json(validProducts);
 });
 
 app.get('/api/products/:id', (req, res) => {
   const product = products.find(p => p.id == req.params.id);
   if (product) {
+    if (product.image && product.image.startsWith('/images/')) {
+      const imagePath = path.join(__dirname, product.image);
+      if (!fs.existsSync(imagePath)) {
+        return res.json({ ...product, image: null, imageMissing: true });
+      }
+    }
     res.json(product);
   } else {
     res.status(404).json({ error: 'Product not found' });
@@ -193,9 +233,9 @@ app.post('/api/upload-product-image', upload.single('image'), (req, res) => {
       
       fs.renameSync(oldPath, newPath);
       imageUrl = `/images/${newFilename}`;
+      console.log(`✅ Product image uploaded: ${imageUrl}`);
     }
     
-    console.log(`✅ Product image uploaded: ${imageUrl}`);
     res.json({ 
       success: true, 
       imageUrl: imageUrl,
@@ -262,12 +302,13 @@ app.get('/api/images', (req, res) => {
       .map(file => {
         const match = file.match(/product(\d+)\./);
         const productNumber = match ? parseInt(match[1]) : null;
+        const stats = fs.statSync(path.join(imagesDir, file));
         return {
           name: file,
           url: `/images/${file}`,
           productNumber: productNumber,
-          size: fs.statSync(path.join(imagesDir, file)).size,
-          uploadedAt: fs.statSync(path.join(imagesDir, file)).mtime
+          size: stats.size,
+          uploadedAt: stats.mtime
         };
       })
       .sort((a, b) => {
@@ -278,6 +319,7 @@ app.get('/api/images', (req, res) => {
       });
     res.json({ success: true, images });
   } catch (error) {
+    console.error('Error listing images:', error);
     res.status(500).json({ error: 'Failed to list images' });
   }
 });
@@ -310,14 +352,19 @@ app.post('/api/products', (req, res) => {
     image: finalImageUrl || '',
     badge: flash ? 'flash' : null,
     flash: flash === true || flash === 'true',
-    description: description || ''
+    description: description || '',
+    createdAt: new Date().toISOString()
   };
   
   products.push(newProduct);
-  saveProducts();
-  console.log(`✅ Product added: ${name} (${newProduct.id})`);
+  const saved = saveProducts();
   
-  res.json({ success: true, product: newProduct });
+  if (saved) {
+    console.log(`✅ Product added: ${name} (${newProduct.id})`);
+    res.json({ success: true, product: newProduct });
+  } else {
+    res.status(500).json({ success: false, error: 'Failed to save product' });
+  }
 });
 
 // Update product
@@ -327,10 +374,14 @@ app.put('/api/products/:id', (req, res) => {
     return res.status(404).json({ error: 'Product not found' });
   }
   
-  products[index] = { ...products[index], ...req.body };
-  saveProducts();
+  products[index] = { ...products[index], ...req.body, updatedAt: new Date().toISOString() };
+  const saved = saveProducts();
   
-  res.json({ success: true, product: products[index] });
+  if (saved) {
+    res.json({ success: true, product: products[index] });
+  } else {
+    res.status(500).json({ success: false, error: 'Failed to update product' });
+  }
 });
 
 // Delete product
@@ -342,10 +393,14 @@ app.delete('/api/products/:id', (req, res) => {
   
   const deletedProduct = products[index];
   products.splice(index, 1);
-  saveProducts();
-  console.log(`🗑️ Product deleted: ${deletedProduct.name}`);
+  const saved = saveProducts();
   
-  res.json({ success: true, message: 'Product deleted' });
+  if (saved) {
+    console.log(`🗑️ Product deleted: ${deletedProduct.name}`);
+    res.json({ success: true, message: 'Product deleted' });
+  } else {
+    res.status(500).json({ success: false, error: 'Failed to delete product' });
+  }
 });
 
 // Bulk create products from product1 to product100 images
@@ -382,7 +437,8 @@ app.post('/api/bulk-create-products', async (req, res) => {
           image: img.url,
           badge: flash ? 'flash' : null,
           flash: flash === true || flash === 'true',
-          description: `Product ${img.number} - High quality electronics product`
+          description: `Product ${img.number} - High quality electronics product`,
+          createdAt: new Date().toISOString()
         };
         products.push(newProduct);
         createdProducts.push(newProduct);
@@ -403,6 +459,25 @@ app.post('/api/bulk-create-products', async (req, res) => {
   } catch (error) {
     console.error('Error bulk creating products:', error);
     res.status(500).json({ error: 'Failed to bulk create products' });
+  }
+});
+
+// Delete product image
+app.delete('/api/images/:filename', (req, res) => {
+  try {
+    const filename = req.params.filename;
+    const imagePath = path.join(imagesDir, filename);
+    
+    if (fs.existsSync(imagePath)) {
+      fs.unlinkSync(imagePath);
+      console.log(`🗑️ Deleted image: ${filename}`);
+      res.json({ success: true, message: 'Image deleted successfully' });
+    } else {
+      res.status(404).json({ error: 'Image not found' });
+    }
+  } catch (error) {
+    console.error('Error deleting image:', error);
+    res.status(500).json({ error: 'Failed to delete image' });
   }
 });
 
@@ -570,7 +645,8 @@ app.get('/api/health', (req, res) => {
     location: 'Eldoret, Kenya', 
     store: 'Yetu Electronics',
     products: products.length,
-    activeSessions: activeSessions.size
+    activeSessions: activeSessions.size,
+    imagesCount: fs.readdirSync(imagesDir).filter(f => /\.(jpg|jpeg|png|gif|webp)$/i.test(f)).length
   });
 });
 
@@ -588,7 +664,8 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`👤 Admin Login: admin / yetu2025`);
   console.log(`🌐 Local URL: http://localhost:${PORT}`);
   console.log(`📁 Images folder: ${path.join(__dirname, 'images')}`);
-  console.log(`📸 Ready for product1.jpg to product100.jpg uploads`);
+  console.log(`📸 Images found: ${fs.readdirSync(imagesDir).filter(f => /\.(jpg|jpeg|png|gif|webp)$/i.test(f)).length}`);
+  console.log(`💾 Products in database: ${products.length}`);
   if (process.env.RENDER_EXTERNAL_HOSTNAME) {
     console.log(`🌍 Live URL: https://${process.env.RENDER_EXTERNAL_HOSTNAME}`);
   }
