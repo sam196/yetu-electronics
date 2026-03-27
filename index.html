@@ -1,372 +1,93 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Yetu Electronics | Best Electronics in Eldoret</title>
-    <meta name="description" content="Shop the best electronics at Yetu - Phones, Laptops, TVs, Accessories and more. Best prices in Eldoret, Kenya with M-Pesa payment.">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-
-<!-- Top Bar -->
-<div class="top-bar">
+<!-- Admin Panel Section - Only visible when logged in -->
+<section id="admin-panel" class="admin-panel" style="display: none;">
     <div class="container">
-        <div class="top-bar-left">
-            <span><i class="fas fa-check-circle"></i> 100% Authentic Products</span>
-            <span><i class="fas fa-truck"></i> Free Delivery Over KSh 5,000</span>
-            <span><i class="fas fa-phone-alt"></i> 24/7 Support: 0741 842 196</span>
-        </div>
-        <div class="top-bar-right">
-            <a href="#" id="cart-link-top"><i class="fas fa-shopping-cart"></i> Cart (<span id="cart-count-top">0</span>)</a>
-            <a href="#"><i class="fas fa-user"></i> Account</a>
-        </div>
-    </div>
-</div>
-
-<!-- Header / Navigation -->
-<header>
-    <div class="container header-container">
-        <div class="logo">
-            <a href="#home">
-                <h1>YETU<span>Electronics</span></h1>
-                <small>Eldoret's Best Electronics Store</small>
-            </a>
+        <div class="admin-header">
+            <h3><i class="fas fa-cog"></i> Admin Panel</h3>
+            <button id="close-admin" class="close-admin"><i class="fas fa-times"></i></button>
         </div>
         
-        <div class="search-bar">
-            <input type="text" id="search-input" placeholder="Search for phones, laptops, TVs, accessories...">
-            <button id="search-btn"><i class="fas fa-search"></i></button>
+        <div class="admin-tabs">
+            <button class="admin-tab active" data-tab="add-product">Add Product</button>
+            <button class="admin-tab" data-tab="manage-products">Manage Products</button>
+            <button class="admin-tab" data-tab="upload-images">Upload Images</button>
         </div>
         
-        <div class="header-actions">
-            <div class="location-picker">
-                <i class="fas fa-map-marker-alt"></i>
-                <span>Eldoret</span>
-                <i class="fas fa-chevron-down"></i>
-            </div>
-            <div class="cart-icon" id="cart-icon">
-                <i class="fas fa-shopping-cart"></i>
-                <span class="cart-count" id="cart-count-header">0</span>
-            </div>
-        </div>
-    </div>
-</header>
-
-<!-- Mobile Menu Toggle -->
-<button class="mobile-menu-toggle" id="mobile-menu-toggle">
-    <i class="fas fa-bars"></i>
-</button>
-
-<!-- Category Navigation -->
-<nav class="category-nav" id="category-nav">
-    <div class="container">
-        <ul class="category-menu">
-            <li><a href="#" data-category="all" class="active"><i class="fas fa-th-large"></i> All Products</a></li>
-            <li><a href="#" data-category="phones"><i class="fas fa-mobile-alt"></i> Phones</a></li>
-            <li><a href="#" data-category="laptops"><i class="fas fa-laptop"></i> Laptops</a></li>
-            <li><a href="#" data-category="tvs"><i class="fas fa-tv"></i> TVs</a></li>
-            <li><a href="#" data-category="audio"><i class="fas fa-headphones"></i> Audio</a></li>
-            <li><a href="#" data-category="accessories"><i class="fas fa-plug"></i> Accessories</a></li>
-            <li><a href="#" data-category="gaming"><i class="fas fa-gamepad"></i> Gaming</a></li>
-        </ul>
-    </div>
-</nav>
-
-<!-- Hero Banner -->
-<section class="hero-banner" id="home">
-    <div class="hero-slider" id="hero-slider">
-        <div class="hero-slide active">
-            <div class="hero-content">
-                <h2>Big Tech Sale!</h2>
-                <p>Up to 40% off on selected electronics</p>
-                <button class="shop-now-btn">Shop Now</button>
-            </div>
-            <div class="hero-bg" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
-        </div>
-        <div class="hero-slide">
-            <div class="hero-content">
-                <h2>Latest Smartphones</h2>
-                <p>Get the newest arrivals at best prices</p>
-                <button class="shop-now-btn">Explore Phones</button>
-            </div>
-            <div class="hero-bg" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"></div>
-        </div>
-        <div class="hero-slide">
-            <div class="hero-content">
-                <h2>Free Delivery Eldoret</h2>
-                <p>On orders above KSh 5,000 across Eldoret</p>
-                <button class="shop-now-btn">Shop Now</button>
-            </div>
-            <div class="hero-bg" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);"></div>
-        </div>
-    </div>
-    <button class="hero-prev"><i class="fas fa-chevron-left"></i></button>
-    <button class="hero-next"><i class="fas fa-chevron-right"></i></button>
-    <div class="hero-dots"></div>
-</section>
-
-<!-- Flash Sales Section -->
-<section class="flash-sales">
-    <div class="container">
-        <div class="section-header">
-            <h3><i class="fas fa-bolt"></i> Flash Sales</h3>
-            <div class="countdown" id="countdown">
-                <span class="countdown-label">Ends in:</span>
-                <span class="countdown-time"><span id="hours">00</span>:<span id="minutes">00</span>:<span id="seconds">00</span></span>
-            </div>
-        </div>
-        <div class="products-grid" id="flash-products"></div>
-    </div>
-</section>
-
-<!-- Categories Section -->
-<section class="categories-section">
-    <div class="container">
-        <div class="section-header">
-            <h3><i class="fas fa-tags"></i> Shop by Category</h3>
-            <a href="#" class="view-all">View All <i class="fas fa-arrow-right"></i></a>
-        </div>
-        <div class="categories-grid">
-            <div class="category-card" data-cat="phones">
-                <i class="fas fa-mobile-alt"></i>
-                <h4>Phones</h4>
-                <p>200+ products</p>
-            </div>
-            <div class="category-card" data-cat="laptops">
-                <i class="fas fa-laptop"></i>
-                <h4>Laptops</h4>
-                <p>150+ products</p>
-            </div>
-            <div class="category-card" data-cat="tvs">
-                <i class="fas fa-tv"></i>
-                <h4>TVs</h4>
-                <p>80+ products</p>
-            </div>
-            <div class="category-card" data-cat="audio">
-                <i class="fas fa-headphones"></i>
-                <h4>Audio</h4>
-                <p>120+ products</p>
-            </div>
-            <div class="category-card" data-cat="accessories">
-                <i class="fas fa-plug"></i>
-                <h4>Accessories</h4>
-                <p>300+ products</p>
-            </div>
-            <div class="category-card" data-cat="gaming">
-                <i class="fas fa-gamepad"></i>
-                <h4>Gaming</h4>
-                <p>60+ products</p>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Featured Products -->
-<section class="featured-products">
-    <div class="container">
-        <div class="section-header">
-            <h3><i class="fas fa-star"></i> Featured Products</h3>
-            <div class="filter-buttons">
-                <button class="filter-btn active" data-filter="all">All</button>
-                <button class="filter-btn" data-filter="phones">Phones</button>
-                <button class="filter-btn" data-filter="laptops">Laptops</button>
-                <button class="filter-btn" data-filter="tvs">TVs</button>
-                <button class="filter-btn" data-filter="audio">Audio</button>
-            </div>
-        </div>
-        <div class="products-grid" id="featured-products"></div>
-        <div class="load-more">
-            <button id="load-more-btn">Load More Products <i class="fas fa-arrow-down"></i></button>
-        </div>
-    </div>
-</section>
-
-<!-- All Products Section -->
-<section class="all-products" id="products">
-    <div class="container">
-        <div class="section-header">
-            <h3><i class="fas fa-list"></i> All Products</h3>
-            <div class="sort-options">
-                <select id="sort-select">
-                    <option value="default">Sort by: Featured</option>
-                    <option value="price-low">Price: Low to High</option>
-                    <option value="price-high">Price: High to Low</option>
-                    <option value="name-asc">Name: A to Z</option>
-                    <option value="name-desc">Name: Z to A</option>
-                </select>
-            </div>
-        </div>
-        <div class="products-grid" id="all-products-grid"></div>
-        <div id="no-results" class="no-results" style="display:none;">
-            <i class="fas fa-search"></i>
-            <p>No products found. Try a different search term.</p>
-        </div>
-    </div>
-</section>
-
-<!-- Benefits Section -->
-<section class="benefits">
-    <div class="container">
-        <div class="benefits-grid">
-            <div class="benefit-item">
-                <i class="fas fa-truck"></i>
-                <h4>Free Delivery Eldoret</h4>
-                <p>On orders over KSh 5,000</p>
-            </div>
-            <div class="benefit-item">
-                <i class="fas fa-undo-alt"></i>
-                <h4>7-Day Returns</h4>
-                <p>Hassle-free returns</p>
-            </div>
-            <div class="benefit-item">
-                <i class="fas fa-shield-alt"></i>
-                <h4>Authentic Products</h4>
-                <p>100% genuine warranty</p>
-            </div>
-            <div class="benefit-item">
-                <i class="fas fa-mobile-alt"></i>
-                <h4>M-Pesa Payment</h4>
-                <p>Pay securely with M-Pesa STK Push</p>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Newsletter Section -->
-<section class="newsletter">
-    <div class="container">
-        <div class="newsletter-content">
-            <i class="fas fa-envelope"></i>
-            <h3>Subscribe to our newsletter</h3>
-            <p>Get the latest deals and exclusive offers</p>
-            <form id="newsletter-form">
-                <input type="email" placeholder="Enter your email address" required>
-                <button type="submit">Subscribe</button>
-            </form>
-        </div>
-    </div>
-</section>
-
-<!-- Footer -->
-<footer>
-    <div class="container">
-        <div class="footer-grid">
-            <div class="footer-col">
-                <h3>YETU<span>Electronics</span></h3>
-                <p>Your trusted electronics store in Eldoret. Quality products at the best prices.</p>
-                <div class="social-links">
-                    <a href="#"><i class="fab fa-facebook-f"></i></a>
-                    <a href="#"><i class="fab fa-twitter"></i></a>
-                    <a href="#"><i class="fab fa-instagram"></i></a>
-                    <a href="#"><i class="fab fa-whatsapp"></i></a>
-                </div>
-            </div>
-            <div class="footer-col">
-                <h4>Customer Service</h4>
-                <ul>
-                    <li><a href="#">Contact Us</a></li>
-                    <li><a href="#">FAQs</a></li>
-                    <li><a href="#">Returns Policy</a></li>
-                    <li><a href="#">Shipping Info</a></li>
-                    <li><a href="#">Payment Methods</a></li>
-                </ul>
-            </div>
-            <div class="footer-col">
-                <h4>Shop</h4>
-                <ul>
-                    <li><a href="#" data-category="phones">Phones</a></li>
-                    <li><a href="#" data-category="laptops">Laptops</a></li>
-                    <li><a href="#" data-category="tvs">TVs</a></li>
-                    <li><a href="#" data-category="audio">Audio</a></li>
-                    <li><a href="#" data-category="gaming">Gaming</a></li>
-                </ul>
-            </div>
-            <div class="footer-col">
-                <h4>Contact Info</h4>
-                <ul class="contact-info">
-                    <li><i class="fas fa-map-marker-alt"></i> Eldoret, Kenya</li>
-                    <li><i class="fas fa-phone"></i> 0741 842 196</li>
-                    <li><i class="fas fa-envelope"></i> sales@yetu.com</li>
-                </ul>
-                <div class="payment-methods">
-                    <i class="fas fa-mobile-alt"></i>
-                    <span>M-PESA</span>
-                </div>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            <p>&copy; 2025 Yetu Electronics, Eldoret. All rights reserved. | M-PESA Till: 5673977</p>
-        </div>
-    </div>
-</footer>
-
-<!-- Cart Modal -->
-<div id="cart-modal" class="cart-modal">
-    <div class="cart-modal-content">
-        <div class="cart-header">
-            <h3><i class="fas fa-shopping-cart"></i> Your Cart</h3>
-            <span class="cart-close">&times;</span>
-        </div>
-        <div id="cart-items" class="cart-items"></div>
-        <div class="cart-summary">
-            <div class="cart-total">
-                <span>Subtotal:</span>
-                <span id="cart-subtotal">KSh 0</span>
-            </div>
-            <div class="cart-total">
-                <span>Delivery (Eldoret):</span>
-                <span id="delivery-fee">KSh 0</span>
-            </div>
-            <div class="cart-total grand-total">
-                <span>Total:</span>
-                <span id="cart-total">KSh 0</span>
-            </div>
-            <button id="checkout-btn" class="checkout-btn">Proceed to Checkout</button>
-        </div>
-    </div>
-</div>
-
-<!-- Checkout Modal - M-Pesa Only -->
-<div id="checkout-modal" class="checkout-modal">
-    <div class="checkout-modal-content">
-        <div class="checkout-header">
-            <h3><i class="fas fa-mobile-alt"></i> M-Pesa Payment</h3>
-            <span class="checkout-close">&times;</span>
-        </div>
-        <div class="checkout-body">
-            <div class="order-summary">
-                <h4>Order Summary</h4>
-                <div id="order-items"></div>
-                <div class="order-total">
-                    <span>Total Amount:</span>
-                    <span id="order-total-amount">KSh 0</span>
-                </div>
-            </div>
-            
-            <div class="payment-section">
-                <h4>M-Pesa Payment</h4>
-                <div class="payment-info">
-                    <p><i class="fas fa-info-circle"></i> You will receive a payment request on your phone</p>
+        <!-- Add Product Tab -->
+        <div id="add-product" class="admin-tab-content active">
+            <h4>Add New Product</h4>
+            <form id="add-product-form" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label>Product Name:</label>
+                    <input type="text" id="product-name" required>
                 </div>
                 
-                <div class="stk-push-section">
-                    <label for="checkout-phone">M-Pesa Phone Number:</label>
-                    <input type="tel" id="checkout-phone" placeholder="e.g., 0712345678" class="phone-input">
-                    <p class="phone-hint">Format: 0712345678 or 254712345678</p>
-                    
-                    <button id="stk-push-checkout" class="stk-btn">
-                        <i class="fas fa-mobile-alt"></i> Pay with M-Pesa
-                    </button>
-                    
-                    <div id="payment-status" class="payment-status"></div>
+                <div class="form-group">
+                    <label>Category:</label>
+                    <select id="product-category">
+                        <option value="phones">Phones</option>
+                        <option value="laptops">Laptops</option>
+                        <option value="tvs">TVs</option>
+                        <option value="audio">Audio</option>
+                        <option value="accessories">Accessories</option>
+                        <option value="gaming">Gaming</option>
+                    </select>
                 </div>
-            </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Price (KSh):</label>
+                        <input type="number" id="product-price" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Old Price (KSh):</label>
+                        <input type="number" id="product-old-price" placeholder="Optional">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Product Image:</label>
+                    <input type="file" id="product-image" accept="image/*">
+                    <div id="image-preview" class="image-preview"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Description:</label>
+                    <textarea id="product-description" rows="3"></textarea>
+                </div>
+                
+                <div class="form-group checkbox">
+                    <label>
+                        <input type="checkbox" id="product-flash"> Flash Sale Item
+                    </label>
+                </div>
+                
+                <button type="submit" class="submit-btn">Add Product</button>
+            </form>
+        </div>
+        
+        <!-- Manage Products Tab -->
+        <div id="manage-products" class="admin-tab-content">
+            <h4>Manage Products</h4>
+            <div id="products-list" class="products-list"></div>
+        </div>
+        
+        <!-- Upload Images Tab -->
+        <div id="upload-images" class="admin-tab-content">
+            <h4>Upload Multiple Images</h4>
+            <form id="bulk-upload-form" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label>Select Images (max 5MB each):</label>
+                    <input type="file" id="bulk-images" accept="image/*" multiple>
+                    <div id="bulk-preview" class="bulk-preview"></div>
+                </div>
+                <button type="submit" class="submit-btn">Upload Images</button>
+            </form>
+            <div id="uploaded-images" class="uploaded-images"></div>
         </div>
     </div>
-</div>
+</section>
 
-<script src="script.js"></script>
-</body>
-</html>
+<!-- Admin Login Button -->
+<button id="admin-login-btn" class="admin-login-btn">
+    <i class="fas fa-lock"></i> Admin
+</button>
