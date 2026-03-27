@@ -1,207 +1,5 @@
-// ============================================
-// M-PESA PAYMENT INTEGRATION
-// ============================================
-
-function initMpesaPayment() {
-    const stkPushCheckout = document.getElementById('stk-push-checkout');
-    const verifyTransaction = document.getElementById('verify-transaction');
-    const cashOrderBtn = document.getElementById('confirm-cash-order');
-    const paymentStatus = document.getElementById('payment-status');
-    
-    // STK Push Payment
-    if (stkPushCheckout) {
-        stkPushCheckout.addEventListener('click', async () => {
-            const phone = document.getElementById('checkout-phone').value;
-            
-            if (!phone) {
-                updatePaymentStatus('Please enter your M-Pesa phone number', 'error');
-                return;
-            }
-            
-            if (cart.length === 0) {
-                updatePaymentStatus('Your cart is empty!', 'error');
-                return;
-            }
-            
-            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            
-            updatePaymentStatus('Sending payment request to your phone...', 'info');
-            stkPushCheckout.disabled = true;
-            stkPushCheckout.textContent = 'Sending...';
-            
-            try {
-                const response = await fetch('/api/mpesa/stkpush', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        phone: phone,
-                        amount: total,
-                        accountReference: `YETU-${Date.now()}`,
-                        transactionDesc: 'Electronics Purchase'
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    updatePaymentStatus('✅ Payment request sent! Check your phone and enter PIN to complete.', 'success');
-                    pollPaymentStatus(data.checkoutRequestID);
-                } else {
-                    updatePaymentStatus(data.message || 'Payment request failed. Please try again.', 'error');
-                    stkPushCheckout.disabled = false;
-                    stkPushCheckout.textContent = 'Send Payment Request';
-                }
-            } catch (error) {
-                updatePaymentStatus('Network error. Please try again.', 'error');
-                stkPushCheckout.disabled = false;
-                stkPushCheckout.textContent = 'Send Payment Request';
-            }
-        });
-    }
-    
-    function pollPaymentStatus(checkoutRequestID) {
-        let attempts = 0;
-        const interval = setInterval(async () => {
-            attempts++;
-            
-            try {
-                const response = await fetch('/api/mpesa/status', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ checkoutRequestID })
-                });
-                
-                const data = await response.json();
-                
-                if (data.ResultCode === 0) {
-                    clearInterval(interval);
-                    updatePaymentStatus('✅ Payment successful! Thank you for your purchase.', 'success');
-                    
-                    // Clear cart
-                    cart = [];
-                    saveCart();
-                    updateCartDisplay();
-                    
-                    setTimeout(() => {
-                        document.getElementById('checkout-modal').style.display = 'none';
-                        showNotification('Order placed successfully! We will contact you shortly.', 'success');
-                    }, 2000);
-                    
-                    if (stkPushCheckout) {
-                        stkPushCheckout.disabled = false;
-                        stkPushCheckout.textContent = 'Send Payment Request';
-                    }
-                } else if (data.ResultCode && data.ResultCode !== 1037) {
-                    clearInterval(interval);
-                    updatePaymentStatus('Payment failed or was cancelled. Please try again.', 'error');
-                    
-                    if (stkPushCheckout) {
-                        stkPushCheckout.disabled = false;
-                        stkPushCheckout.textContent = 'Send Payment Request';
-                    }
-                } else if (attempts >= 24) {
-                    clearInterval(interval);
-                    updatePaymentStatus('Payment timeout. Please check your M-Pesa messages.', 'error');
-                    
-                    if (stkPushCheckout) {
-                        stkPushCheckout.disabled = false;
-                        stkPushCheckout.textContent = 'Send Payment Request';
-                    }
-                }
-            } catch (error) {
-                console.error('Status check error:', error);
-            }
-        }, 5000);
-    }
-    
-    // Manual Transaction Verification
-    if (verifyTransaction) {
-        verifyTransaction.addEventListener('click', () => {
-            const transCode = document.getElementById('transaction-code').value;
-            
-            if (!transCode) {
-                updatePaymentStatus('Please enter your M-Pesa transaction code', 'error');
-                return;
-            }
-            
-            if (transCode.length < 6) {
-                updatePaymentStatus('Please enter a valid transaction code', 'error');
-                return;
-            }
-            
-            updatePaymentStatus('Verifying payment...', 'info');
-            verifyTransaction.disabled = true;
-            verifyTransaction.textContent = 'Verifying...';
-            
-            // Simulate verification (in production, you'd verify with your backend)
-            setTimeout(() => {
-                updatePaymentStatus('✅ Payment verified! Thank you for your order.', 'success');
-                
-                // Clear cart
-                cart = [];
-                saveCart();
-                updateCartDisplay();
-                
-                setTimeout(() => {
-                    document.getElementById('checkout-modal').style.display = 'none';
-                    showNotification('Order placed successfully! We will contact you shortly.', 'success');
-                }, 2000);
-                
-                verifyTransaction.disabled = false;
-                verifyTransaction.textContent = 'Complete Order';
-                document.getElementById('transaction-code').value = '';
-            }, 1500);
-        });
-    }
-    
-    // Cash on Delivery
-    if (cashOrderBtn) {
-        cashOrderBtn.addEventListener('click', () => {
-            if (cart.length === 0) {
-                updatePaymentStatus('Your cart is empty!', 'error');
-                return;
-            }
-            
-            updatePaymentStatus('Processing your order...', 'info');
-            
-            setTimeout(() => {
-                showNotification('Order placed! You will pay on delivery.', 'success');
-                
-                cart = [];
-                saveCart();
-                updateCartDisplay();
-                
-                document.getElementById('checkout-modal').style.display = 'none';
-            }, 1000);
-        });
-    }
-    
-    function updatePaymentStatus(message, type) {
-        if (paymentStatus) {
-            paymentStatus.innerHTML = message;
-            paymentStatus.className = `payment-status ${type}`;
-        }
-    }
-}
-
-// Update the init function to include M-Pesa
-function init() {
-    renderFlashSales();
-    renderProducts('featured-products', products, true);
-    startCountdown();
-    initHeroSlider();
-    initCartModal();
-    initCheckout(); // This will now use the M-Pesa functions
-    initSearchAndFilters();
-    initCategoryCards();
-    initMobileMenu();
-    initNewsletter();
-    initMpesaPayment(); // Add this line
-    updateCartCount();
-}
-
-// Make sure init is called
-document.addEventListener('DOMContentLoaded', init);// Yetu Electronics - Complete Ecommerce JavaScript
+// Yetu Electronics - Eldoret Store
+// Complete JavaScript with M-Pesa STK Push Only
 
 // ============================================
 // PRODUCT DATABASE
@@ -290,19 +88,16 @@ function renderProducts(containerId, productList, isFeatured = false) {
     
     let productsToShow = productList;
     
-    // Apply filter
     if (currentFilter !== 'all') {
         productsToShow = productsToShow.filter(p => p.category === currentFilter);
     }
     
-    // Apply search
     if (currentSearch) {
         productsToShow = productsToShow.filter(p => 
             p.name.toLowerCase().includes(currentSearch.toLowerCase())
         );
     }
     
-    // Apply sort
     if (currentSort === 'price-low') {
         productsToShow.sort((a, b) => a.price - b.price);
     } else if (currentSort === 'price-high') {
@@ -313,7 +108,6 @@ function renderProducts(containerId, productList, isFeatured = false) {
         productsToShow.sort((a, b) => b.name.localeCompare(a.name));
     }
     
-    // Limit for featured section
     if (isFeatured) {
         productsToShow = productsToShow.slice(0, 8);
     }
@@ -346,8 +140,7 @@ function renderProducts(containerId, productList, isFeatured = false) {
         </div>
     `).join('');
     
-    // Attach add to cart events
-    document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
+    document.querySelectorAll(`#${containerId} .add-to-cart-btn`).forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             const id = parseInt(btn.dataset.id);
@@ -385,6 +178,7 @@ function updateCartDisplay() {
     if (cart.length === 0) {
         cartItemsContainer.innerHTML = '<div style="text-align:center; padding:40px;">Your cart is empty</div>';
         document.getElementById('cart-subtotal').textContent = 'KSh 0';
+        document.getElementById('delivery-fee').textContent = 'KSh 0';
         document.getElementById('cart-total').textContent = 'KSh 0';
         return;
     }
@@ -413,10 +207,13 @@ function updateCartDisplay() {
         `;
     }).join('');
     
-    document.getElementById('cart-subtotal').textContent = formatPrice(subtotal);
-    document.getElementById('cart-total').textContent = formatPrice(subtotal);
+    const deliveryFee = subtotal > 5000 ? 0 : 200;
+    const total = subtotal + deliveryFee;
     
-    // Attach quantity events
+    document.getElementById('cart-subtotal').textContent = formatPrice(subtotal);
+    document.getElementById('delivery-fee').textContent = formatPrice(deliveryFee);
+    document.getElementById('cart-total').textContent = formatPrice(total);
+    
     document.querySelectorAll('.quantity-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             const id = parseInt(btn.dataset.id);
@@ -641,7 +438,7 @@ function initCartModal() {
 }
 
 // ============================================
-// CHECKOUT & M-PESA
+// ORDER SUMMARY
 // ============================================
 function updateOrderSummary() {
     const orderItemsContainer = document.getElementById('order-items');
@@ -658,90 +455,140 @@ function updateOrderSummary() {
         `;
     }).join('');
     
-    document.getElementById('order-total-amount').textContent = formatPrice(subtotal);
+    const deliveryFee = subtotal > 5000 ? 0 : 200;
+    const total = subtotal + deliveryFee;
+    
+    orderItemsContainer.innerHTML += `
+        <div class="order-item delivery">
+            <span>Delivery (Eldoret):</span>
+            <span>${formatPrice(deliveryFee)}</span>
+        </div>
+    `;
+    
+    document.getElementById('order-total-amount').textContent = formatPrice(total);
 }
 
-function initCheckout() {
-    const checkoutClose = document.querySelector('.checkout-close');
-    const paymentOptions = document.querySelectorAll('.payment-option');
+// ============================================
+// M-PESA STK PUSH PAYMENT (Only Payment Method)
+// ============================================
+function initMpesaPayment() {
     const stkPushBtn = document.getElementById('stk-push-checkout');
-    const verifyBtn = document.getElementById('verify-transaction');
-    const cashOrderBtn = document.getElementById('confirm-cash-order');
+    const checkoutPhone = document.getElementById('checkout-phone');
     const paymentStatus = document.getElementById('payment-status');
     
-    if (checkoutClose) {
-        checkoutClose.addEventListener('click', () => {
-            document.getElementById('checkout-modal').style.display = 'none';
-        });
-    }
-    
-    paymentOptions.forEach(option => {
-        option.addEventListener('click', () => {
-            paymentOptions.forEach(opt => opt.classList.remove('active'));
-            option.classList.add('active');
-            
-            const paymentMethod = option.dataset.payment;
-            document.querySelectorAll('.payment-form').forEach(form => form.classList.remove('active'));
-            document.getElementById(`${paymentMethod}-payment`).classList.add('active');
-        });
-    });
-    
     if (stkPushBtn) {
-        stkPushBtn.addEventListener('click', () => {
-            const phone = document.getElementById('checkout-phone').value;
+        stkPushBtn.addEventListener('click', async () => {
+            const phone = checkoutPhone.value.trim();
+            
             if (!phone) {
-                paymentStatus.innerHTML = 'Please enter your phone number';
-                paymentStatus.className = 'payment-status error';
+                updatePaymentStatus('Please enter your M-Pesa phone number', 'error');
                 return;
             }
             
-            paymentStatus.innerHTML = 'Sending payment request to your phone...';
-            paymentStatus.className = 'payment-status';
-            
-            setTimeout(() => {
-                paymentStatus.innerHTML = '✅ Payment request sent! Check your phone and enter PIN to complete.';
-                paymentStatus.className = 'payment-status success';
-            }, 1500);
-        });
-    }
-    
-    if (verifyBtn) {
-        verifyBtn.addEventListener('click', () => {
-            const transCode = document.getElementById('transaction-code').value;
-            if (!transCode) {
-                paymentStatus.innerHTML = 'Please enter your transaction code';
-                paymentStatus.className = 'payment-status error';
+            if (cart.length === 0) {
+                updatePaymentStatus('Your cart is empty!', 'error');
                 return;
             }
             
-            paymentStatus.innerHTML = 'Verifying payment...';
-            paymentStatus.className = 'payment-status';
+            // Calculate total with delivery
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const deliveryFee = subtotal > 5000 ? 0 : 200;
+            const total = subtotal + deliveryFee;
             
-            setTimeout(() => {
-                paymentStatus.innerHTML = '✅ Payment verified! Thank you for your order.';
-                paymentStatus.className = 'payment-status success';
+            updatePaymentStatus('Sending payment request to your phone...', 'info');
+            stkPushBtn.disabled = true;
+            stkPushBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+            
+            try {
+                const response = await fetch('/api/mpesa/stkpush', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        phone: phone,
+                        amount: total,
+                        accountReference: `YETU-${Date.now()}`,
+                        transactionDesc: `Electronics Purchase - Eldoret`
+                    })
+                });
                 
-                // Clear cart
-                cart = [];
-                saveCart();
-                updateCartDisplay();
+                const data = await response.json();
                 
-                setTimeout(() => {
-                    document.getElementById('checkout-modal').style.display = 'none';
-                    showNotification('Order placed successfully!', 'success');
-                }, 2000);
-            }, 1500);
+                if (data.success) {
+                    updatePaymentStatus('✅ Payment request sent! Check your phone and enter PIN to complete.', 'success');
+                    pollPaymentStatus(data.checkoutRequestID, total);
+                } else {
+                    updatePaymentStatus(data.message || 'Payment request failed. Please try again.', 'error');
+                    stkPushBtn.disabled = false;
+                    stkPushBtn.innerHTML = '<i class="fas fa-mobile-alt"></i> Pay with M-Pesa';
+                }
+            } catch (error) {
+                updatePaymentStatus('Network error. Please try again.', 'error');
+                stkPushBtn.disabled = false;
+                stkPushBtn.innerHTML = '<i class="fas fa-mobile-alt"></i> Pay with M-Pesa';
+            }
         });
     }
     
-    if (cashOrderBtn) {
-        cashOrderBtn.addEventListener('click', () => {
-            showNotification('Order placed! You will pay on delivery.', 'success');
-            cart = [];
-            saveCart();
-            updateCartDisplay();
-            document.getElementById('checkout-modal').style.display = 'none';
-        });
+    function pollPaymentStatus(checkoutRequestID, totalAmount) {
+        let attempts = 0;
+        const interval = setInterval(async () => {
+            attempts++;
+            
+            try {
+                const response = await fetch('/api/mpesa/status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ checkoutRequestID })
+                });
+                
+                const data = await response.json();
+                
+                if (data.ResultCode === 0) {
+                    clearInterval(interval);
+                    updatePaymentStatus('✅ Payment successful! Thank you for shopping at Yetu Electronics Eldoret!', 'success');
+                    
+                    // Clear cart
+                    cart = [];
+                    saveCart();
+                    updateCartDisplay();
+                    
+                    setTimeout(() => {
+                        document.getElementById('checkout-modal').style.display = 'none';
+                        showNotification(`Order placed successfully! Total: ${formatPrice(totalAmount)}`, 'success');
+                    }, 2000);
+                    
+                    if (stkPushBtn) {
+                        stkPushBtn.disabled = false;
+                        stkPushBtn.innerHTML = '<i class="fas fa-mobile-alt"></i> Pay with M-Pesa';
+                    }
+                } else if (data.ResultCode && data.ResultCode !== 1037) {
+                    clearInterval(interval);
+                    updatePaymentStatus('❌ Payment failed or was cancelled. Please try again.', 'error');
+                    
+                    if (stkPushBtn) {
+                        stkPushBtn.disabled = false;
+                        stkPushBtn.innerHTML = '<i class="fas fa-mobile-alt"></i> Pay with M-Pesa';
+                    }
+                } else if (attempts >= 24) {
+                    clearInterval(interval);
+                    updatePaymentStatus('Payment timeout. Please check your M-Pesa messages and contact support.', 'error');
+                    
+                    if (stkPushBtn) {
+                        stkPushBtn.disabled = false;
+                        stkPushBtn.innerHTML = '<i class="fas fa-mobile-alt"></i> Pay with M-Pesa';
+                    }
+                }
+            } catch (error) {
+                console.error('Status check error:', error);
+            }
+        }, 5000);
+    }
+    
+    function updatePaymentStatus(message, type) {
+        if (paymentStatus) {
+            paymentStatus.innerHTML = message;
+            paymentStatus.className = `payment-status ${type}`;
+        }
     }
 }
 
@@ -927,6 +774,77 @@ function initNewsletter() {
 }
 
 // ============================================
+// UPDATE ALL PRODUCTS (Global Function)
+// ============================================
+function updateAllProducts() {
+    // This function is called from various places
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) currentSearch = searchInput.value;
+    
+    let filtered = products;
+    
+    if (currentFilter !== 'all') {
+        filtered = filtered.filter(p => p.category === currentFilter);
+    }
+    
+    if (currentSearch) {
+        filtered = filtered.filter(p => p.name.toLowerCase().includes(currentSearch.toLowerCase()));
+    }
+    
+    if (currentSort === 'price-low') {
+        filtered.sort((a, b) => a.price - b.price);
+    } else if (currentSort === 'price-high') {
+        filtered.sort((a, b) => b.price - a.price);
+    } else if (currentSort === 'name-asc') {
+        filtered.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (currentSort === 'name-desc') {
+        filtered.sort((a, b) => b.name.localeCompare(a.name));
+    }
+    
+    const toShow = filtered.slice(0, displayedProducts);
+    const container = document.getElementById('all-products-grid');
+    const noResults = document.getElementById('no-results');
+    
+    if (container) {
+        if (toShow.length === 0) {
+            if (noResults) noResults.style.display = 'block';
+            container.innerHTML = '';
+            return;
+        }
+        
+        if (noResults) noResults.style.display = 'none';
+        
+        container.innerHTML = toShow.map(product => `
+            <div class="product-card">
+                ${product.badge ? `<div class="product-badge ${product.badge === 'flash' ? 'flash' : ''}">${product.badge === 'flash' ? '🔥 Flash Sale' : '✨ New'}</div>` : ''}
+                <div class="product-image">
+                    <img src="${product.image}" alt="${product.name}">
+                </div>
+                <div class="product-info">
+                    <h4 class="product-title">${product.name}</h4>
+                    <div class="product-price">
+                        <span class="current-price">${formatPrice(product.price)}</span>
+                        ${product.oldPrice ? `<span class="old-price">${formatPrice(product.oldPrice)}</span>` : ''}
+                    </div>
+                    <button class="add-to-cart-btn" data-id="${product.id}">
+                        <i class="fas fa-shopping-cart"></i> Add to Cart
+                    </button>
+                </div>
+            </div>
+        `).join('');
+        
+        document.querySelectorAll('#all-products-grid .add-to-cart-btn').forEach(btn => {
+            btn.addEventListener('click', () => addToCart(parseInt(btn.dataset.id)));
+        });
+    }
+    
+    const loadMoreBtn = document.getElementById('load-more-btn');
+    if (loadMoreBtn) {
+        loadMoreBtn.style.display = filtered.length > displayedProducts ? 'block' : 'none';
+    }
+}
+
+// ============================================
 // INITIALIZE EVERYTHING
 // ============================================
 function init() {
@@ -935,12 +853,65 @@ function init() {
     startCountdown();
     initHeroSlider();
     initCartModal();
-    initCheckout();
+    initMpesaPayment();
     initSearchAndFilters();
     initCategoryCards();
     initMobileMenu();
     initNewsletter();
     updateCartCount();
+    
+    // Add CSS for animations
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        .payment-status.success {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        .payment-status.error {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        .payment-status.info {
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        .order-item.delivery {
+            border-top: 1px solid var(--border);
+            margin-top: 10px;
+            padding-top: 10px;
+            font-weight: 500;
+        }
+        .phone-hint {
+            font-size: 11px;
+            color: var(--gray);
+            margin-top: 5px;
+            margin-bottom: 10px;
+        }
+        .stk-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+    `;
+    document.head.appendChild(style);
 }
 
 document.addEventListener('DOMContentLoaded', init);
