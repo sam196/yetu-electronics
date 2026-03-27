@@ -10,19 +10,20 @@ const app = express();
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
+    // Use the existing images folder in your project
     const imagesDir = path.join(__dirname, 'images');
     if (!fs.existsSync(imagesDir)) {
       fs.mkdirSync(imagesDir, { recursive: true });
+      console.log('📁 Created images folder');
     }
     cb(null, imagesDir);
   },
   filename: function (req, file, cb) {
-    const originalName = path.parse(file.originalname).name;
     const ext = path.extname(file.originalname);
+    const productNumber = req.body.productNumber;
     
-    // Check if this is a product number upload
-    if (req.body.productNumber) {
-      cb(null, `product${req.body.productNumber}${ext}`);
+    if (productNumber && productNumber >= 1 && productNumber <= 100) {
+      cb(null, `product${productNumber}${ext}`);
     } else {
       const timestamp = Date.now();
       cb(null, `image-${timestamp}${ext}`);
@@ -52,7 +53,22 @@ const upload = multer({
 app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname));
-app.use('/images', express.static(path.join(__dirname, 'images')));
+
+// Use your existing images folder
+const imagesDir = path.join(__dirname, 'images');
+
+// Ensure images folder exists
+if (!fs.existsSync(imagesDir)) {
+  fs.mkdirSync(imagesDir, { recursive: true });
+  console.log('📁 Created images folder');
+} else {
+  // Count existing images
+  const existingImages = fs.readdirSync(imagesDir).filter(f => /\.(jpg|jpeg|png|gif|webp)$/i.test(f));
+  console.log(`📸 Found ${existingImages.length} images in your images folder`);
+}
+
+// Serve images statically from your images folder
+app.use('/images', express.static(imagesDir));
 
 // Admin credentials
 const ADMIN_CREDENTIALS = {
@@ -67,33 +83,31 @@ const activeSessions = new Map();
 const PRODUCTS_FILE = path.join(__dirname, 'products.json');
 let products = [];
 
-// Create images directory if it doesn't exist
-const imagesDir = path.join(__dirname, 'images');
-if (!fs.existsSync(imagesDir)) {
-  fs.mkdirSync(imagesDir, { recursive: true });
-  console.log('📁 Created images directory');
-}
-
-// Load products from file on server start
+// Load products from file
 try {
   if (fs.existsSync(PRODUCTS_FILE)) {
     const data = fs.readFileSync(PRODUCTS_FILE, 'utf8');
     products = JSON.parse(data);
     console.log(`✅ Loaded ${products.length} products from database`);
     
-    // Verify images exist for each product
-    let missingImages = 0;
-    products.forEach(product => {
-      if (product.image && product.image.startsWith('/images/')) {
-        const imagePath = path.join(__dirname, product.image);
-        if (!fs.existsSync(imagePath)) {
-          console.log(`⚠️ Warning: Image not found for product: ${product.name} (${product.image})`);
-          missingImages++;
+    // Verify which product images exist in your images folder
+    if (fs.existsSync(imagesDir)) {
+      const existingImages = fs.readdirSync(imagesDir);
+      products.forEach(product => {
+        if (product.productNumber) {
+          const possibleExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+          let imageExists = false;
+          for (const ext of possibleExtensions) {
+            if (existingImages.includes(`product${product.productNumber}${ext}`)) {
+              imageExists = true;
+              break;
+            }
+          }
+          if (!imageExists) {
+            console.log(`⚠️ Warning: Image product${product.productNumber} not found in images folder`);
+          }
         }
-      }
-    });
-    if (missingImages > 0) {
-      console.log(`⚠️ ${missingImages} products have missing images`);
+      });
     }
   } else {
     products = [];
@@ -158,52 +172,53 @@ app.post('/api/admin/logout', (req, res) => {
 });
 
 // ============================================
-// PRODUCT API ENDPOINTS
+// IMAGE MANAGEMENT ENDPOINTS
 // ============================================
 
-app.get('/api/products', (req, res) => {
-  // Return products with validation that images exist
-  const validProducts = products.map(product => {
-    if (product.image && product.image.startsWith('/images/')) {
-      const imagePath = path.join(__dirname, product.image);
-      if (!fs.existsSync(imagePath)) {
-        // Image missing, return a copy without image or with placeholder
-        return { ...product, image: null, imageMissing: true };
-      }
-    }
-    return product;
-  });
-  res.json(validProducts);
-});
-
-app.get('/api/products/:id', (req, res) => {
-  const product = products.find(p => p.id == req.params.id);
-  if (product) {
-    if (product.image && product.image.startsWith('/images/')) {
-      const imagePath = path.join(__dirname, product.image);
-      if (!fs.existsSync(imagePath)) {
-        return res.json({ ...product, image: null, imageMissing: true });
-      }
-    }
-    res.json(product);
-  } else {
-    res.status(404).json({ error: 'Product not found' });
+// Get all images from your images folder
+app.get('/api/images', (req, res) => {
+  try {
+    const files = fs.readdirSync(imagesDir);
+    const images = files
+      .filter(file => /\.(jpg|jpeg|png|gif|webp)$/i.test(file))
+      .map(file => {
+        const match = file.match(/product(\d+)\./);
+        const productNumber = match ? parseInt(match[1]) : null;
+        const stats = fs.statSync(path.join(imagesDir, file));
+        return {
+          name: file,
+          url: `/images/${file}`,
+          productNumber: productNumber,
+          size: stats.size,
+          uploadedAt: stats.mtime
+        };
+      })
+      .sort((a, b) => {
+        if (a.productNumber && b.productNumber) {
+          return a.productNumber - b.productNumber;
+        }
+        return a.name.localeCompare(b.name);
+      });
+    res.json({ success: true, images, folder: 'images' });
+  } catch (error) {
+    console.error('Error listing images:', error);
+    res.status(500).json({ error: 'Failed to list images' });
   }
 });
 
-// Upload single product image
+// Upload new image to your images folder
 app.post('/api/upload-image', upload.single('image'), (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
     const imageUrl = `/images/${req.file.filename}`;
-    console.log(`✅ Image uploaded: ${imageUrl}`);
+    console.log(`✅ Image uploaded to images folder: ${imageUrl}`);
     res.json({ 
       success: true, 
       imageUrl: imageUrl,
       filename: req.file.filename,
-      message: 'Image uploaded successfully'
+      message: 'Image uploaded successfully to images folder'
     });
   } catch (error) {
     console.error('Upload error:', error);
@@ -233,14 +248,14 @@ app.post('/api/upload-product-image', upload.single('image'), (req, res) => {
       
       fs.renameSync(oldPath, newPath);
       imageUrl = `/images/${newFilename}`;
-      console.log(`✅ Product image uploaded: ${imageUrl}`);
+      console.log(`✅ Product image saved to images folder: ${imageUrl}`);
     }
     
     res.json({ 
       success: true, 
       imageUrl: imageUrl,
       filename: req.file.filename,
-      message: 'Product image uploaded successfully'
+      message: 'Product image saved to images folder'
     });
   } catch (error) {
     console.error('Upload error:', error);
@@ -248,7 +263,7 @@ app.post('/api/upload-product-image', upload.single('image'), (req, res) => {
   }
 });
 
-// Upload bulk product images (product1 to product100)
+// Upload bulk product images
 app.post('/api/upload-bulk-products', upload.array('images', 100), (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
@@ -281,11 +296,11 @@ app.post('/api/upload-bulk-products', upload.array('images', 100), (req, res) =>
       }
     }
     
-    console.log(`✅ Uploaded ${uploadedFiles.length} product images`);
+    console.log(`✅ Uploaded ${uploadedFiles.length} product images to images folder`);
     res.json({ 
       success: true, 
       uploadedFiles: uploadedFiles,
-      message: `${uploadedFiles.length} product images uploaded successfully`
+      message: `${uploadedFiles.length} product images uploaded to images folder`
     });
   } catch (error) {
     console.error('Upload error:', error);
@@ -293,34 +308,55 @@ app.post('/api/upload-bulk-products', upload.array('images', 100), (req, res) =>
   }
 });
 
-// Get list of uploaded images
-app.get('/api/images', (req, res) => {
+// Delete image from images folder
+app.delete('/api/images/:filename', (req, res) => {
   try {
-    const files = fs.readdirSync(imagesDir);
-    const images = files
-      .filter(file => /\.(jpg|jpeg|png|gif|webp)$/i.test(file))
-      .map(file => {
-        const match = file.match(/product(\d+)\./);
-        const productNumber = match ? parseInt(match[1]) : null;
-        const stats = fs.statSync(path.join(imagesDir, file));
-        return {
-          name: file,
-          url: `/images/${file}`,
-          productNumber: productNumber,
-          size: stats.size,
-          uploadedAt: stats.mtime
-        };
-      })
-      .sort((a, b) => {
-        if (a.productNumber && b.productNumber) {
-          return a.productNumber - b.productNumber;
-        }
-        return a.name.localeCompare(b.name);
-      });
-    res.json({ success: true, images });
+    const filename = req.params.filename;
+    const imagePath = path.join(imagesDir, filename);
+    
+    if (fs.existsSync(imagePath)) {
+      fs.unlinkSync(imagePath);
+      console.log(`🗑️ Deleted image: ${filename} from images folder`);
+      res.json({ success: true, message: 'Image deleted successfully' });
+    } else {
+      res.status(404).json({ error: 'Image not found' });
+    }
   } catch (error) {
-    console.error('Error listing images:', error);
-    res.status(500).json({ error: 'Failed to list images' });
+    console.error('Error deleting image:', error);
+    res.status(500).json({ error: 'Failed to delete image' });
+  }
+});
+
+// ============================================
+// PRODUCT API ENDPOINTS
+// ============================================
+
+app.get('/api/products', (req, res) => {
+  // Verify images exist in your images folder
+  const validProducts = products.map(product => {
+    if (product.image && product.image.startsWith('/images/')) {
+      const imagePath = path.join(__dirname, product.image);
+      if (!fs.existsSync(imagePath)) {
+        return { ...product, image: null, imageMissing: true };
+      }
+    }
+    return product;
+  });
+  res.json(validProducts);
+});
+
+app.get('/api/products/:id', (req, res) => {
+  const product = products.find(p => p.id == req.params.id);
+  if (product) {
+    if (product.image && product.image.startsWith('/images/')) {
+      const imagePath = path.join(__dirname, product.image);
+      if (!fs.existsSync(imagePath)) {
+        return res.json({ ...product, image: null, imageMissing: true });
+      }
+    }
+    res.json(product);
+  } else {
+    res.status(404).json({ error: 'Product not found' });
   }
 });
 
@@ -330,6 +366,7 @@ app.post('/api/products', (req, res) => {
   
   let finalImageUrl = imageUrl;
   if (productNumber && !imageUrl) {
+    // Check if product image exists in your images folder
     const possibleExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
     for (const ext of possibleExtensions) {
       const imagePath = path.join(imagesDir, `product${productNumber}${ext}`);
@@ -357,14 +394,8 @@ app.post('/api/products', (req, res) => {
   };
   
   products.push(newProduct);
-  const saved = saveProducts();
-  
-  if (saved) {
-    console.log(`✅ Product added: ${name} (${newProduct.id})`);
-    res.json({ success: true, product: newProduct });
-  } else {
-    res.status(500).json({ success: false, error: 'Failed to save product' });
-  }
+  saveProducts();
+  res.json({ success: true, product: newProduct });
 });
 
 // Update product
@@ -375,13 +406,8 @@ app.put('/api/products/:id', (req, res) => {
   }
   
   products[index] = { ...products[index], ...req.body, updatedAt: new Date().toISOString() };
-  const saved = saveProducts();
-  
-  if (saved) {
-    res.json({ success: true, product: products[index] });
-  } else {
-    res.status(500).json({ success: false, error: 'Failed to update product' });
-  }
+  saveProducts();
+  res.json({ success: true, product: products[index] });
 });
 
 // Delete product
@@ -393,17 +419,11 @@ app.delete('/api/products/:id', (req, res) => {
   
   const deletedProduct = products[index];
   products.splice(index, 1);
-  const saved = saveProducts();
-  
-  if (saved) {
-    console.log(`🗑️ Product deleted: ${deletedProduct.name}`);
-    res.json({ success: true, message: 'Product deleted' });
-  } else {
-    res.status(500).json({ success: false, error: 'Failed to delete product' });
-  }
+  saveProducts();
+  res.json({ success: true, message: 'Product deleted' });
 });
 
-// Bulk create products from product1 to product100 images
+// Bulk create products from images in your images folder
 app.post('/api/bulk-create-products', async (req, res) => {
   const { category, price, flash } = req.body;
   
@@ -447,14 +467,13 @@ app.post('/api/bulk-create-products', async (req, res) => {
     
     if (createdProducts.length > 0) {
       saveProducts();
-      console.log(`✅ Created ${createdProducts.length} products from images`);
     }
     
     res.json({ 
       success: true, 
       created: createdProducts.length,
       products: createdProducts,
-      message: `Created ${createdProducts.length} products from available images`
+      message: `Created ${createdProducts.length} products from images in your images folder`
     });
   } catch (error) {
     console.error('Error bulk creating products:', error);
@@ -462,27 +481,8 @@ app.post('/api/bulk-create-products', async (req, res) => {
   }
 });
 
-// Delete product image
-app.delete('/api/images/:filename', (req, res) => {
-  try {
-    const filename = req.params.filename;
-    const imagePath = path.join(imagesDir, filename);
-    
-    if (fs.existsSync(imagePath)) {
-      fs.unlinkSync(imagePath);
-      console.log(`🗑️ Deleted image: ${filename}`);
-      res.json({ success: true, message: 'Image deleted successfully' });
-    } else {
-      res.status(404).json({ error: 'Image not found' });
-    }
-  } catch (error) {
-    console.error('Error deleting image:', error);
-    res.status(500).json({ error: 'Failed to delete image' });
-  }
-});
-
 // ============================================
-// M-PESA CONFIGURATION
+// M-PESA CONFIGURATION (Keep your existing code)
 // ============================================
 
 const MPESA_CONFIG = {
@@ -493,10 +493,6 @@ const MPESA_CONFIG = {
   environment: process.env.NODE_ENV || 'sandbox'
 };
 
-console.log('🚀 Yetu Electronics Server Starting...');
-console.log('📍 Location: Eldoret, Kenya');
-console.log('📱 M-Pesa Environment:', MPESA_CONFIG.environment);
-
 const activeTransactions = new Map();
 
 async function getAccessToken() {
@@ -506,19 +502,15 @@ async function getAccessToken() {
     const response = await axios.get(`${baseUrl}/oauth/v1/generate?grant_type=client_credentials`, {
       headers: { Authorization: `Basic ${auth}` }
     });
-    console.log('✅ Access token obtained');
     return response.data.access_token;
   } catch (error) {
-    console.error('❌ Error getting access token:', error.response?.data || error.message);
+    console.error('Error getting access token:', error.response?.data || error.message);
     throw new Error('Failed to get access token');
   }
 }
 
-// STK Push Endpoint
 app.post('/api/mpesa/stkpush', async (req, res) => {
   const { phone, amount, accountReference, transactionDesc } = req.body;
-  
-  console.log('📱 STK Push request:', { phone, amount });
   
   let formattedPhone = phone.toString().replace(/\D/g, '');
   if (formattedPhone.startsWith('0')) formattedPhone = '254' + formattedPhone.substring(1);
@@ -532,7 +524,7 @@ app.post('/api/mpesa/stkpush', async (req, res) => {
     const baseUrl = MPESA_CONFIG.environment === 'production' ? 'https://api.safaricom.co.ke' : 'https://sandbox.safaricom.co.ke';
     const callbackUrl = process.env.RENDER_EXTERNAL_HOSTNAME 
       ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME}/api/mpesa-callback`
-      : 'https://yetu-electronics.onrender.com/api/mpesa-callback';
+      : `https://${req.get('host')}/api/mpesa-callback`;
     
     const response = await axios.post(`${baseUrl}/mpesa/stkpush/v1/processrequest`, {
       BusinessShortCode: MPESA_CONFIG.businessShortCode,
@@ -567,7 +559,7 @@ app.post('/api/mpesa/stkpush', async (req, res) => {
       message: 'Payment request sent. Check your phone to enter PIN.' 
     });
   } catch (error) {
-    console.error('❌ STK Push Error:', error.response?.data || error.message);
+    console.error('STK Push Error:', error.response?.data || error.message);
     res.status(500).json({ 
       success: false, 
       message: error.response?.data?.errorMessage || 'Payment request failed. Please try again.' 
@@ -575,9 +567,8 @@ app.post('/api/mpesa/stkpush', async (req, res) => {
   }
 });
 
-// M-Pesa Callback
 app.post('/api/mpesa-callback', (req, res) => {
-  console.log('🔔 M-Pesa Callback received');
+  console.log('M-Pesa Callback received');
   const { Body } = req.body;
   
   if (Body && Body.stkCallback) {
@@ -591,21 +582,20 @@ app.post('/api/mpesa-callback', (req, res) => {
           metadata[item.Name] = item.Value;
         });
       }
-      console.log('✅ PAYMENT SUCCESSFUL!', { 
+      console.log('PAYMENT SUCCESSFUL!', { 
         checkoutRequestID: CheckoutRequestID, 
         amount: metadata.Amount, 
         receipt: metadata.MpesaReceiptNumber 
       });
       if (transaction) transaction.status = 'completed';
     } else {
-      console.log('❌ PAYMENT FAILED:', ResultDesc);
+      console.log('PAYMENT FAILED:', ResultDesc);
       if (transaction) transaction.status = 'failed';
     }
   }
   res.json({ ResultCode: 0, ResultDesc: 'Success' });
 });
 
-// Check payment status
 app.post('/api/mpesa/status', async (req, res) => {
   const { checkoutRequestID } = req.body;
   
@@ -639,14 +629,16 @@ app.post('/api/mpesa/status', async (req, res) => {
 
 // Health check
 app.get('/api/health', (req, res) => {
+  const imageCount = fs.existsSync(imagesDir) ? fs.readdirSync(imagesDir).filter(f => /\.(jpg|jpeg|png|gif|webp)$/i.test(f)).length : 0;
   res.json({ 
     status: 'healthy', 
     timestamp: new Date().toISOString(), 
     location: 'Eldoret, Kenya', 
     store: 'Yetu Electronics',
     products: products.length,
-    activeSessions: activeSessions.size,
-    imagesCount: fs.readdirSync(imagesDir).filter(f => /\.(jpg|jpeg|png|gif|webp)$/i.test(f)).length
+    imagesCount: imageCount,
+    imagesFolder: imagesDir,
+    environment: process.env.RENDER ? 'render' : 'development'
   });
 });
 
@@ -659,13 +651,23 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`\n🏪 Yetu Electronics - Eldoret Store`);
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📍 Location: Eldoret, Kenya`);
-  console.log(`📱 M-Pesa Environment: ${MPESA_CONFIG.environment}`);
+  console.log(`🌍 Environment: ${process.env.RENDER ? 'Render (Production)' : 'Development'}`);
+  console.log(`📁 Images folder: ${imagesDir}`);
+  
+  if (fs.existsSync(imagesDir)) {
+    const images = fs.readdirSync(imagesDir).filter(f => /\.(jpg|jpeg|png|gif|webp)$/i.test(f));
+    console.log(`📸 Images in folder: ${images.length}`);
+    const productImages = images.filter(f => f.startsWith('product'));
+    if (productImages.length > 0) {
+      console.log(`   - Product images: ${productImages.length} (product1.jpg, product2.jpg, etc.)`);
+      console.log(`   - Example: ${productImages.slice(0, 5).join(', ')}${productImages.length > 5 ? '...' : ''}`);
+    }
+  }
+  
+  console.log(`💾 Products in database: ${products.length}`);
   console.log(`👤 Admin Login: admin / yetu2025`);
   console.log(`🌐 Local URL: http://localhost:${PORT}`);
-  console.log(`📁 Images folder: ${path.join(__dirname, 'images')}`);
-  console.log(`📸 Images found: ${fs.readdirSync(imagesDir).filter(f => /\.(jpg|jpeg|png|gif|webp)$/i.test(f)).length}`);
-  console.log(`💾 Products in database: ${products.length}`);
+  
   if (process.env.RENDER_EXTERNAL_HOSTNAME) {
     console.log(`🌍 Live URL: https://${process.env.RENDER_EXTERNAL_HOSTNAME}`);
   }
