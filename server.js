@@ -19,7 +19,7 @@ const storage = multer.diskStorage({
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const ext = path.extname(file.originalname);
-    cb(null, file.fieldname + '-' + uniqueSuffix + ext);
+    cb(null, 'product-' + uniqueSuffix + ext);
   }
 });
 
@@ -53,34 +53,34 @@ const ADMIN_CREDENTIALS = {
   password: 'yetu2025'
 };
 
-// Store active admin sessions (simple in-memory, use database in production)
+// Store active admin sessions
 const activeSessions = new Map();
 
 // Product storage
 const PRODUCTS_FILE = path.join(__dirname, 'products.json');
 let products = [];
 
+// Create uploads directory if it doesn't exist
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  console.log('📁 Created uploads directory');
+}
+
 try {
   if (fs.existsSync(PRODUCTS_FILE)) {
     const data = fs.readFileSync(PRODUCTS_FILE, 'utf8');
     products = JSON.parse(data);
-    console.log(`✅ Loaded ${products.length} products`);
+    console.log(`✅ Loaded ${products.length} products from database`);
   } else {
-    products = [
-      { id: 1, name: "iPhone 15 Pro Max", category: "phones", price: 165000, oldPrice: 185000, rating: 4.8, reviews: 234, image: "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=300", badge: "flash", flash: true },
-      { id: 2, name: "Samsung Galaxy S24 Ultra", category: "phones", price: 155000, oldPrice: 175000, rating: 4.7, reviews: 189, image: "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=300", badge: "new" },
-      { id: 3, name: "MacBook Pro M3", category: "laptops", price: 210000, oldPrice: 240000, rating: 4.9, reviews: 345, image: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=300", badge: "flash", flash: true },
-      { id: 4, name: "Dell XPS 15", category: "laptops", price: 180000, oldPrice: 200000, rating: 4.7, reviews: 234, image: "https://images.unsplash.com/photo-1593642702821-c8da6771f0c6?w=300" },
-      { id: 5, name: "Samsung 65\" 4K Smart TV", category: "tvs", price: 95000, oldPrice: 120000, rating: 4.7, reviews: 456, image: "https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=300", badge: "flash", flash: true },
-      { id: 6, name: "Sony WH-1000XM5", category: "audio", price: 35000, oldPrice: 45000, rating: 4.8, reviews: 567, image: "https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?w=300" },
-      { id: 7, name: "Apple Watch Series 9", category: "accessories", price: 55000, oldPrice: 65000, rating: 4.7, reviews: 345, image: "https://images.unsplash.com/photo-1579586337278-3befd40fd17a?w=300" },
-      { id: 8, name: "PS5 Console", category: "gaming", price: 65000, oldPrice: 75000, rating: 4.9, reviews: 890, image: "https://images.unsplash.com/photo-1606813907291-d86efa9b94de?w=300", badge: "flash", flash: true }
-    ];
+    // Start with empty products array - no default images
+    products = [];
     fs.writeFileSync(PRODUCTS_FILE, JSON.stringify(products, null, 2));
-    console.log(`📦 Created default products with ${products.length} items`);
+    console.log(`📦 Created empty products database`);
   }
 } catch (error) {
   console.error('Error loading products:', error);
+  products = [];
 }
 
 function saveProducts() {
@@ -91,7 +91,6 @@ function saveProducts() {
 // ADMIN AUTHENTICATION ENDPOINTS
 // ============================================
 
-// Admin login
 app.post('/api/admin/login', (req, res) => {
   const { username, password } = req.body;
   
@@ -111,7 +110,6 @@ app.post('/api/admin/login', (req, res) => {
   }
 });
 
-// Verify admin token
 app.post('/api/admin/verify', (req, res) => {
   const { token } = req.body;
   
@@ -122,7 +120,6 @@ app.post('/api/admin/verify', (req, res) => {
   }
 });
 
-// Admin logout
 app.post('/api/admin/logout', (req, res) => {
   const { token } = req.body;
   if (token) {
@@ -135,12 +132,10 @@ app.post('/api/admin/logout', (req, res) => {
 // PRODUCT API ENDPOINTS
 // ============================================
 
-// Get all products
 app.get('/api/products', (req, res) => {
   res.json(products);
 });
 
-// Get single product
 app.get('/api/products/:id', (req, res) => {
   const product = products.find(p => p.id == req.params.id);
   if (product) {
@@ -150,15 +145,17 @@ app.get('/api/products/:id', (req, res) => {
   }
 });
 
-// Upload product image (requires admin token)
+// Upload single product image
 app.post('/api/upload-image', upload.single('image'), (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
+    const imageUrl = `/uploads/${req.file.filename}`;
+    console.log(`✅ Image uploaded: ${imageUrl}`);
     res.json({ 
       success: true, 
-      imageUrl: `/uploads/${req.file.filename}`,
+      imageUrl: imageUrl,
       message: 'Image uploaded successfully'
     });
   } catch (error) {
@@ -167,7 +164,46 @@ app.post('/api/upload-image', upload.single('image'), (req, res) => {
   }
 });
 
-// Add new product (requires admin token)
+// Upload multiple images
+app.post('/api/upload-multiple', upload.array('images', 10), (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: 'No files uploaded' });
+    }
+    
+    const imageUrls = req.files.map(file => `/uploads/${file.filename}`);
+    console.log(`✅ Uploaded ${imageUrls.length} images`);
+    res.json({ 
+      success: true, 
+      imageUrls: imageUrls,
+      message: `${imageUrls.length} images uploaded successfully`
+    });
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({ error: 'Failed to upload images' });
+  }
+});
+
+// Get list of uploaded images
+app.get('/api/images', (req, res) => {
+  const uploadDir = path.join(__dirname, 'uploads');
+  try {
+    const files = fs.readdirSync(uploadDir);
+    const images = files
+      .filter(file => /\.(jpg|jpeg|png|gif|webp)$/i.test(file))
+      .map(file => ({
+        name: file,
+        url: `/uploads/${file}`,
+        size: fs.statSync(path.join(uploadDir, file)).size,
+        uploadedAt: fs.statSync(path.join(uploadDir, file)).mtime
+      }));
+    res.json({ success: true, images });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to list images' });
+  }
+});
+
+// Add new product
 app.post('/api/products', (req, res) => {
   const { name, category, price, oldPrice, imageUrl, flash, description } = req.body;
   
@@ -179,7 +215,7 @@ app.post('/api/products', (req, res) => {
     oldPrice: oldPrice ? parseInt(oldPrice) : null,
     rating: 4.5,
     reviews: 0,
-    image: imageUrl || '/uploads/default-product.jpg',
+    image: imageUrl || '',
     badge: flash ? 'flash' : null,
     flash: flash === true || flash === 'true',
     description: description || ''
@@ -187,6 +223,7 @@ app.post('/api/products', (req, res) => {
   
   products.push(newProduct);
   saveProducts();
+  console.log(`✅ Product added: ${name} (${newProduct.id})`);
   
   res.json({ success: true, product: newProduct });
 });
@@ -211,8 +248,10 @@ app.delete('/api/products/:id', (req, res) => {
     return res.status(404).json({ error: 'Product not found' });
   }
   
+  const deletedProduct = products[index];
   products.splice(index, 1);
   saveProducts();
+  console.log(`🗑️ Product deleted: ${deletedProduct.name}`);
   
   res.json({ success: true, message: 'Product deleted' });
 });
@@ -398,6 +437,7 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`📱 M-Pesa Environment: ${MPESA_CONFIG.environment}`);
   console.log(`👤 Admin Login: admin / yetu2025`);
   console.log(`🌐 Local URL: http://localhost:${PORT}`);
+  console.log(`📁 Uploads folder: ${path.join(__dirname, 'uploads')}`);
   if (process.env.RENDER_EXTERNAL_HOSTNAME) {
     console.log(`🌍 Live URL: https://${process.env.RENDER_EXTERNAL_HOSTNAME}`);
   }
