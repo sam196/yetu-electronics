@@ -10,6 +10,24 @@
   "dependencies": {
     "express": "^4.18.2",
     "axios": "^1.6.0",
+    "cors": "^2.8.5",
+    "multer": "^1.4.5-lts.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}{
+  "name": "yetu-electronics",
+  "version": "1.0.0",
+  "description": "Yetu Electronics - Premium Electronics Store in Eldoret, Kenya with M-Pesa STK Push",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "axios": "^1.6.0",
     "cors": "^2.8.5"
   },
   "devDependencies": {
