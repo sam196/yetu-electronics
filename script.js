@@ -57,7 +57,7 @@ function showNotification(message, type) {
         top: 20px;
         right: 20px;
         padding: 12px 20px;
-        background: ${type === 'success' ? '#22c55e' : '#ef4444'};
+        background: ${type === 'success' ? '#22c55e' : type === 'error' ? '#ef4444' : '#3b82f6'};
         color: white;
         border-radius: 8px;
         z-index: 2000;
@@ -83,6 +83,296 @@ notificationStyle.textContent = `
     }
 `;
 document.head.appendChild(notificationStyle);
+
+// ============================================
+// CLICK HANDLERS
+// ============================================
+
+// Cart modal functions
+window.openCartModal = function(event) {
+    if (event) event.preventDefault();
+    const cartModal = document.getElementById('cart-modal');
+    if (cartModal) {
+        updateCartDisplay();
+        cartModal.style.display = 'flex';
+    }
+};
+
+window.closeCartModal = function() {
+    const cartModal = document.getElementById('cart-modal');
+    if (cartModal) cartModal.style.display = 'none';
+};
+
+window.closeCheckoutModal = function() {
+    const checkoutModal = document.getElementById('checkout-modal');
+    if (checkoutModal) checkoutModal.style.display = 'none';
+};
+
+// Filter by category
+window.filterByCategory = function(event, category) {
+    if (event) event.preventDefault();
+    currentFilter = category;
+    displayedProducts = 12;
+    
+    // Update active state in category menu
+    document.querySelectorAll('.category-menu a').forEach(link => {
+        if (link.dataset.category === category) {
+            link.classList.add('active');
+        } else {
+            link.classList.remove('active');
+        }
+    });
+    
+    // Update filter buttons
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        if (btn.dataset.filter === category) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+    
+    updateAllProducts();
+    
+    // Smooth scroll to products section
+    const productsSection = document.getElementById('products');
+    if (productsSection) {
+        productsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+};
+
+// Filter by filter button
+window.filterByFilterBtn = function(event, category) {
+    if (event) event.preventDefault();
+    currentFilter = category;
+    displayedProducts = 12;
+    
+    // Update filter buttons
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        if (btn.dataset.filter === category) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+    
+    // Update category menu
+    document.querySelectorAll('.category-menu a').forEach(link => {
+        if (link.dataset.category === category) {
+            link.classList.add('active');
+        } else {
+            link.classList.remove('active');
+        }
+    });
+    
+    updateAllProducts();
+};
+
+// Scroll functions
+window.scrollToHome = function(event) {
+    if (event) event.preventDefault();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+window.scrollToProducts = function(event) {
+    if (event) event.preventDefault();
+    const productsSection = document.getElementById('products');
+    if (productsSection) {
+        productsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+};
+
+// Account and info functions
+window.showAccountMenu = function(event) {
+    if (event) event.preventDefault();
+    showNotification('Account features coming soon!', 'info');
+};
+
+window.showLocationInfo = function(event) {
+    if (event) event.preventDefault();
+    showNotification('Currently serving Eldoret area only. Free delivery for orders over KSh 5,000!', 'info');
+};
+
+window.showLocationOnMap = function(event) {
+    if (event) event.stopPropagation();
+    window.open('https://maps.google.com/?q=Eldoret,Kenya', '_blank');
+};
+
+window.makePhoneCall = function(event) {
+    if (event) event.stopPropagation();
+    window.location.href = 'tel:0741842196';
+};
+
+window.sendEmail = function(event) {
+    if (event) event.stopPropagation();
+    window.location.href = 'mailto:sales@yetu.com';
+};
+
+// Customer service functions
+window.showContactPage = function(event) {
+    if (event) event.preventDefault();
+    showNotification('Contact us: 0741 842 196 or sales@yetu.com', 'info');
+};
+
+window.showFAQs = function(event) {
+    if (event) event.preventDefault();
+    showNotification('FAQs:\n1. How to order? Add items to cart and checkout\n2. Delivery time: 1-3 business days\n3. Returns: 7-day hassle-free returns', 'info');
+};
+
+window.showReturnsPolicy = function(event) {
+    if (event) event.preventDefault();
+    showNotification('7-day hassle-free returns policy. Items must be in original condition with packaging.', 'info');
+};
+
+window.showShippingInfo = function(event) {
+    if (event) event.preventDefault();
+    showNotification('Free delivery in Eldoret for orders over KSh 5,000. Delivery within 1-3 business days.', 'info');
+};
+
+window.showPaymentMethods = function(event) {
+    if (event) event.preventDefault();
+    showNotification('We accept M-Pesa (STK Push), Bank Transfer, and Cash on Delivery.', 'info');
+};
+
+// Newsletter
+window.handleNewsletterSubmit = function(event) {
+    event.preventDefault();
+    const email = event.target.querySelector('input').value;
+    showNotification(`Subscribed! Check ${email} for updates`, 'success');
+    event.target.reset();
+};
+
+// Proceed to checkout
+window.proceedToCheckout = function() {
+    if (cart.length === 0) {
+        showNotification('Your cart is empty!', 'error');
+        return;
+    }
+    const cartModal = document.getElementById('cart-modal');
+    const checkoutModal = document.getElementById('checkout-modal');
+    if (cartModal) cartModal.style.display = 'none';
+    if (checkoutModal) checkoutModal.style.display = 'flex';
+    updateOrderSummary();
+};
+
+// M-Pesa payment
+window.initiateMpesaPayment = async function() {
+    const phone = document.getElementById('checkout-phone').value.trim();
+    const paymentStatus = document.getElementById('payment-status');
+    const stkPushBtn = document.getElementById('stk-push-checkout');
+    
+    if (!phone) {
+        updatePaymentStatus('Please enter your M-Pesa phone number', 'error');
+        return;
+    }
+    
+    if (cart.length === 0) {
+        updatePaymentStatus('Your cart is empty!', 'error');
+        return;
+    }
+    
+    const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const deliveryFee = subtotal > 5000 ? 0 : 200;
+    const total = subtotal + deliveryFee;
+    
+    updatePaymentStatus('Sending payment request to your phone...', 'info');
+    stkPushBtn.disabled = true;
+    stkPushBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+    
+    try {
+        const response = await fetch('/api/mpesa/stkpush', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                phone: phone,
+                amount: total,
+                accountReference: `YETU-${Date.now()}`,
+                transactionDesc: 'Electronics Purchase - Eldoret'
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            updatePaymentStatus('✅ Payment request sent! Check your phone and enter PIN to complete.', 'success');
+            pollPaymentStatus(data.checkoutRequestID, total);
+        } else {
+            updatePaymentStatus(data.message || 'Payment request failed. Please try again.', 'error');
+            stkPushBtn.disabled = false;
+            stkPushBtn.innerHTML = '<i class="fas fa-mobile-alt"></i> Pay with M-Pesa';
+        }
+    } catch (error) {
+        console.error('STK Push Error:', error);
+        updatePaymentStatus('Network error. Please try again.', 'error');
+        stkPushBtn.disabled = false;
+        stkPushBtn.innerHTML = '<i class="fas fa-mobile-alt"></i> Pay with M-Pesa';
+    }
+};
+
+function updatePaymentStatus(message, type) {
+    const paymentStatus = document.getElementById('payment-status');
+    if (paymentStatus) {
+        paymentStatus.innerHTML = message;
+        paymentStatus.className = `payment-status ${type}`;
+    }
+}
+
+function pollPaymentStatus(checkoutRequestID, totalAmount) {
+    let attempts = 0;
+    const interval = setInterval(async () => {
+        attempts++;
+        
+        try {
+            const response = await fetch('/api/mpesa/status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ checkoutRequestID })
+            });
+            
+            const data = await response.json();
+            
+            if (data.ResultCode === 0) {
+                clearInterval(interval);
+                updatePaymentStatus('✅ Payment successful! Thank you for shopping at Yetu Electronics Eldoret!', 'success');
+                
+                cart = [];
+                saveCart();
+                updateCartDisplay();
+                
+                setTimeout(() => {
+                    document.getElementById('checkout-modal').style.display = 'none';
+                    showNotification(`Order placed successfully! Total: ${formatPrice(totalAmount)}`, 'success');
+                }, 2000);
+                
+                const stkPushBtn = document.getElementById('stk-push-checkout');
+                if (stkPushBtn) {
+                    stkPushBtn.disabled = false;
+                    stkPushBtn.innerHTML = '<i class="fas fa-mobile-alt"></i> Pay with M-Pesa';
+                }
+            } else if (data.ResultCode && data.ResultCode !== 1037) {
+                clearInterval(interval);
+                updatePaymentStatus('❌ Payment failed or was cancelled. Please try again.', 'error');
+                
+                const stkPushBtn = document.getElementById('stk-push-checkout');
+                if (stkPushBtn) {
+                    stkPushBtn.disabled = false;
+                    stkPushBtn.innerHTML = '<i class="fas fa-mobile-alt"></i> Pay with M-Pesa';
+                }
+            } else if (attempts >= 24) {
+                clearInterval(interval);
+                updatePaymentStatus('Payment timeout. Please check your M-Pesa messages and contact support.', 'error');
+                
+                const stkPushBtn = document.getElementById('stk-push-checkout');
+                if (stkPushBtn) {
+                    stkPushBtn.disabled = false;
+                    stkPushBtn.innerHTML = '<i class="fas fa-mobile-alt"></i> Pay with M-Pesa';
+                }
+            }
+        } catch (error) {
+            console.error('Status check error:', error);
+        }
+    }, 5000);
+}
 
 // ============================================
 // LOAD PRODUCTS FROM SERVER
@@ -147,20 +437,12 @@ function renderProducts(containerId, productList, isFeatured = false) {
                     <div class="stars">${getStars(product.rating)}</div>
                     <span class="rating-count">(${product.reviews})</span>
                 </div>
-                <button class="add-to-cart-btn" data-id="${product.id}">
+                <button class="add-to-cart-btn" data-id="${product.id}" onclick="addToCart(${product.id})">
                     <i class="fas fa-shopping-cart"></i> Add to Cart
                 </button>
             </div>
         </div>
     `).join('');
-    
-    document.querySelectorAll(`#${containerId} .add-to-cart-btn`).forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const id = parseInt(btn.dataset.id);
-            addToCart(id);
-        });
-    });
 }
 
 function renderFlashSales() {
@@ -185,23 +467,19 @@ function renderFlashSales() {
                     <span class="current-price">${formatPrice(product.price)}</span>
                     ${product.oldPrice ? `<span class="old-price">${formatPrice(product.oldPrice)}</span>` : ''}
                 </div>
-                <button class="add-to-cart-btn" data-id="${product.id}">
+                <button class="add-to-cart-btn" data-id="${product.id}" onclick="addToCart(${product.id})">
                     <i class="fas fa-shopping-cart"></i> Add to Cart
                 </button>
             </div>
         </div>
     `).join('');
-    
-    document.querySelectorAll('#flash-products .add-to-cart-btn').forEach(btn => {
-        btn.addEventListener('click', () => addToCart(parseInt(btn.dataset.id)));
-    });
 }
 
 // ============================================
 // SHOPPING CART FUNCTIONS
 // ============================================
 
-function addToCart(productId) {
+window.addToCart = function(productId) {
     const product = products.find(p => p.id === productId);
     if (!product) return;
     
@@ -221,7 +499,7 @@ function addToCart(productId) {
     saveCart();
     showNotification('Added to cart!', 'success');
     updateCartDisplay();
-}
+};
 
 function updateCartDisplay() {
     const cartItemsContainer = document.getElementById('cart-items');
@@ -248,11 +526,11 @@ function updateCartDisplay() {
                     <div class="cart-item-title">${item.name}</div>
                     <div class="cart-item-price">${formatPrice(item.price)}</div>
                     <div class="cart-item-quantity">
-                        <button class="quantity-btn" data-action="decrease" data-id="${item.id}">-</button>
+                        <button class="quantity-btn" data-action="decrease" data-id="${item.id}" onclick="updateQuantity(${item.id}, 'decrease')">-</button>
                         <span class="quantity-value">${item.quantity}</span>
-                        <button class="quantity-btn" data-action="increase" data-id="${item.id}">+</button>
+                        <button class="quantity-btn" data-action="increase" data-id="${item.id}" onclick="updateQuantity(${item.id}, 'increase')">+</button>
                     </div>
-                    <span class="remove-item" data-id="${item.id}">Remove</span>
+                    <span class="remove-item" data-id="${item.id}" onclick="removeFromCart(${item.id})">Remove</span>
                 </div>
                 <div class="cart-item-total">${formatPrice(itemTotal)}</div>
             </div>
@@ -265,25 +543,9 @@ function updateCartDisplay() {
     document.getElementById('cart-subtotal').textContent = formatPrice(subtotal);
     document.getElementById('delivery-fee').textContent = formatPrice(deliveryFee);
     document.getElementById('cart-total').textContent = formatPrice(total);
-    
-    // Attach quantity events
-    document.querySelectorAll('.quantity-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const id = parseInt(btn.dataset.id);
-            const action = btn.dataset.action;
-            updateQuantity(id, action);
-        });
-    });
-    
-    document.querySelectorAll('.remove-item').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const id = parseInt(btn.dataset.id);
-            removeFromCart(id);
-        });
-    });
 }
 
-function updateQuantity(id, action) {
+window.updateQuantity = function(id, action) {
     const item = cart.find(i => i.id === id);
     if (item) {
         if (action === 'increase') {
@@ -297,13 +559,13 @@ function updateQuantity(id, action) {
         saveCart();
         updateCartDisplay();
     }
-}
+};
 
-function removeFromCart(id) {
+window.removeFromCart = function(id) {
     cart = cart.filter(item => item.id !== id);
     saveCart();
     updateCartDisplay();
-}
+};
 
 // ============================================
 // COUNTDOWN TIMER
@@ -399,49 +661,6 @@ function initHeroSlider() {
 }
 
 // ============================================
-// CART MODAL
-// ============================================
-
-function initCartModal() {
-    const cartIcon = document.getElementById('cart-icon');
-    const cartModal = document.getElementById('cart-modal');
-    const cartClose = document.querySelector('.cart-close');
-    const checkoutBtn = document.getElementById('checkout-btn');
-    
-    if (cartIcon) {
-        cartIcon.addEventListener('click', () => {
-            updateCartDisplay();
-            cartModal.style.display = 'flex';
-        });
-    }
-    
-    if (cartClose) {
-        cartClose.addEventListener('click', () => {
-            cartModal.style.display = 'none';
-        });
-    }
-    
-    if (checkoutBtn) {
-        checkoutBtn.addEventListener('click', () => {
-            if (cart.length === 0) {
-                showNotification('Your cart is empty!', 'error');
-                return;
-            }
-            cartModal.style.display = 'none';
-            document.getElementById('checkout-modal').style.display = 'flex';
-            updateOrderSummary();
-        });
-    }
-    
-    window.addEventListener('click', (e) => {
-        if (e.target === cartModal) cartModal.style.display = 'none';
-        if (e.target === document.getElementById('checkout-modal')) {
-            document.getElementById('checkout-modal').style.display = 'none';
-        }
-    });
-}
-
-// ============================================
 // ORDER SUMMARY
 // ============================================
 
@@ -471,130 +690,6 @@ function updateOrderSummary() {
     `;
     
     document.getElementById('order-total-amount').textContent = formatPrice(total);
-}
-
-// ============================================
-// M-PESA STK PUSH PAYMENT
-// ============================================
-
-function initMpesaPayment() {
-    const stkPushBtn = document.getElementById('stk-push-checkout');
-    const checkoutPhone = document.getElementById('checkout-phone');
-    const paymentStatus = document.getElementById('payment-status');
-    
-    if (stkPushBtn) {
-        stkPushBtn.addEventListener('click', async () => {
-            const phone = checkoutPhone.value.trim();
-            
-            if (!phone) {
-                updatePaymentStatus('Please enter your M-Pesa phone number', 'error');
-                return;
-            }
-            
-            if (cart.length === 0) {
-                updatePaymentStatus('Your cart is empty!', 'error');
-                return;
-            }
-            
-            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            const deliveryFee = subtotal > 5000 ? 0 : 200;
-            const total = subtotal + deliveryFee;
-            
-            updatePaymentStatus('Sending payment request to your phone...', 'info');
-            stkPushBtn.disabled = true;
-            stkPushBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
-            
-            try {
-                const response = await fetch('/api/mpesa/stkpush', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        phone: phone,
-                        amount: total,
-                        accountReference: `YETU-${Date.now()}`,
-                        transactionDesc: 'Electronics Purchase - Eldoret'
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    updatePaymentStatus('✅ Payment request sent! Check your phone and enter PIN to complete.', 'success');
-                    pollPaymentStatus(data.checkoutRequestID, total);
-                } else {
-                    updatePaymentStatus(data.message || 'Payment request failed. Please try again.', 'error');
-                    stkPushBtn.disabled = false;
-                    stkPushBtn.innerHTML = '<i class="fas fa-mobile-alt"></i> Pay with M-Pesa';
-                }
-            } catch (error) {
-                console.error('STK Push Error:', error);
-                updatePaymentStatus('Network error. Please try again.', 'error');
-                stkPushBtn.disabled = false;
-                stkPushBtn.innerHTML = '<i class="fas fa-mobile-alt"></i> Pay with M-Pesa';
-            }
-        });
-    }
-    
-    function pollPaymentStatus(checkoutRequestID, totalAmount) {
-        let attempts = 0;
-        const interval = setInterval(async () => {
-            attempts++;
-            
-            try {
-                const response = await fetch('/api/mpesa/status', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ checkoutRequestID })
-                });
-                
-                const data = await response.json();
-                
-                if (data.ResultCode === 0) {
-                    clearInterval(interval);
-                    updatePaymentStatus('✅ Payment successful! Thank you for shopping at Yetu Electronics Eldoret!', 'success');
-                    
-                    cart = [];
-                    saveCart();
-                    updateCartDisplay();
-                    
-                    setTimeout(() => {
-                        document.getElementById('checkout-modal').style.display = 'none';
-                        showNotification(`Order placed successfully! Total: ${formatPrice(totalAmount)}`, 'success');
-                    }, 2000);
-                    
-                    if (stkPushBtn) {
-                        stkPushBtn.disabled = false;
-                        stkPushBtn.innerHTML = '<i class="fas fa-mobile-alt"></i> Pay with M-Pesa';
-                    }
-                } else if (data.ResultCode && data.ResultCode !== 1037) {
-                    clearInterval(interval);
-                    updatePaymentStatus('❌ Payment failed or was cancelled. Please try again.', 'error');
-                    
-                    if (stkPushBtn) {
-                        stkPushBtn.disabled = false;
-                        stkPushBtn.innerHTML = '<i class="fas fa-mobile-alt"></i> Pay with M-Pesa';
-                    }
-                } else if (attempts >= 24) {
-                    clearInterval(interval);
-                    updatePaymentStatus('Payment timeout. Please check your M-Pesa messages and contact support.', 'error');
-                    
-                    if (stkPushBtn) {
-                        stkPushBtn.disabled = false;
-                        stkPushBtn.innerHTML = '<i class="fas fa-mobile-alt"></i> Pay with M-Pesa';
-                    }
-                }
-            } catch (error) {
-                console.error('Status check error:', error);
-            }
-        }, 5000);
-    }
-    
-    function updatePaymentStatus(message, type) {
-        if (paymentStatus) {
-            paymentStatus.innerHTML = message;
-            paymentStatus.className = `payment-status ${type}`;
-        }
-    }
 }
 
 // ============================================
@@ -650,16 +745,12 @@ function updateAllProducts() {
                         <span class="current-price">${formatPrice(product.price)}</span>
                         ${product.oldPrice ? `<span class="old-price">${formatPrice(product.oldPrice)}</span>` : ''}
                     </div>
-                    <button class="add-to-cart-btn" data-id="${product.id}">
+                    <button class="add-to-cart-btn" data-id="${product.id}" onclick="addToCart(${product.id})">
                         <i class="fas fa-shopping-cart"></i> Add to Cart
                     </button>
                 </div>
             </div>
         `).join('');
-        
-        document.querySelectorAll('#all-products-grid .add-to-cart-btn').forEach(btn => {
-            btn.addEventListener('click', () => addToCart(parseInt(btn.dataset.id)));
-        });
     }
     
     const loadMoreBtn = document.getElementById('load-more-btn');
@@ -671,8 +762,6 @@ function updateAllProducts() {
 function initSearchAndFilters() {
     const searchInput = document.getElementById('search-input');
     const searchBtn = document.getElementById('search-btn');
-    const filterBtns = document.querySelectorAll('.filter-btn');
-    const categoryLinks = document.querySelectorAll('[data-category]');
     const sortSelect = document.getElementById('sort-select');
     const loadMoreBtn = document.getElementById('load-more-btn');
     
@@ -694,29 +783,6 @@ function initSearchAndFilters() {
         });
     }
     
-    filterBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            filterBtns.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            currentFilter = btn.dataset.filter;
-            displayedProducts = 12;
-            updateAllProducts();
-        });
-    });
-    
-    categoryLinks.forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            const category = link.dataset.category;
-            if (category) {
-                currentFilter = category;
-                displayedProducts = 12;
-                updateAllProducts();
-                document.querySelector('.featured-products').scrollIntoView({ behavior: 'smooth' });
-            }
-        });
-    });
-    
     if (sortSelect) {
         sortSelect.addEventListener('change', () => {
             currentSort = sortSelect.value;
@@ -733,30 +799,6 @@ function initSearchAndFilters() {
     }
     
     updateAllProducts();
-}
-
-// ============================================
-// CATEGORY CARDS
-// ============================================
-
-function initCategoryCards() {
-    document.querySelectorAll('.category-card').forEach(card => {
-        card.addEventListener('click', () => {
-            const category = card.dataset.cat;
-            currentFilter = category;
-            displayedProducts = 12;
-            document.querySelector('.featured-products').scrollIntoView({ behavior: 'smooth' });
-            updateAllProducts();
-            
-            // Update active filter button
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.dataset.filter === category) {
-                    btn.classList.add('active');
-                }
-            });
-        });
-    });
 }
 
 // ============================================
@@ -781,113 +823,63 @@ function initMobileMenu() {
 }
 
 // ============================================
-// NEWSLETTER
-// ============================================
-
-function initNewsletter() {
-    const form = document.getElementById('newsletter-form');
-    if (form) {
-        form.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const email = form.querySelector('input').value;
-            showNotification(`Subscribed! Check ${email} for updates`, 'success');
-            form.reset();
-        });
-    }
-}
-
-// ============================================
 // ADMIN PANEL
 // ============================================
 
-function initAdminPanel() {
-    const adminTrigger = document.getElementById('admin-trigger-btn');
+window.openAdminPanel = function() {
     const adminOverlay = document.getElementById('admin-panel-overlay');
-    const closeAdmin = document.getElementById('close-admin');
-    const adminLoginBtn = document.getElementById('admin-login-btn');
-    const adminUsername = document.getElementById('admin-username');
-    const adminPassword = document.getElementById('admin-password');
-    const adminLoginError = document.getElementById('admin-login-error');
-    const adminLoginForm = document.getElementById('admin-login-form');
-    const adminContent = document.getElementById('admin-content');
-    
-    let adminToken = null;
-    
-    // Open admin panel
-    if (adminTrigger) {
-        adminTrigger.addEventListener('click', () => {
-            adminOverlay.style.display = 'flex';
-        });
-    }
-    
-    // Close admin panel
-    if (closeAdmin) {
-        closeAdmin.addEventListener('click', () => {
-            adminOverlay.style.display = 'none';
-        });
-    }
-    
-    // Close on overlay click
-    adminOverlay.addEventListener('click', (e) => {
-        if (e.target === adminOverlay) {
-            adminOverlay.style.display = 'none';
-        }
-    });
-    
-    // Admin login
-    if (adminLoginBtn) {
-        adminLoginBtn.addEventListener('click', async () => {
-            const username = adminUsername.value;
-            const password = adminPassword.value;
-            
-            if (!username || !password) {
-                adminLoginError.textContent = 'Please enter username and password';
-                return;
-            }
-            
-            try {
-                const response = await fetch('/api/admin/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    adminToken = data.token;
-                    adminLoginForm.style.display = 'none';
-                    adminContent.style.display = 'block';
-                    loadProductsList();
-                    loadUploadedImages();
-                    initAdminTabs();
-                    initAddProductForm();
-                    initBulkUploadForm();
-                } else {
-                    adminLoginError.textContent = data.message;
-                }
-            } catch (error) {
-                adminLoginError.textContent = 'Login failed. Please try again.';
-            }
-        });
-    }
-}
+    if (adminOverlay) adminOverlay.style.display = 'flex';
+};
 
-function initAdminTabs() {
-    const tabs = document.querySelectorAll('.admin-tab');
-    tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            tabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            
-            const tabId = tab.dataset.tab;
-            document.querySelectorAll('.admin-tab-content').forEach(content => {
-                content.classList.remove('active');
-            });
-            document.getElementById(tabId).classList.add('active');
+window.closeAdminPanel = function() {
+    const adminOverlay = document.getElementById('admin-panel-overlay');
+    if (adminOverlay) adminOverlay.style.display = 'none';
+};
+
+window.adminLogin = async function() {
+    const username = document.getElementById('admin-username').value;
+    const password = document.getElementById('admin-password').value;
+    const adminLoginError = document.getElementById('admin-login-error');
+    
+    if (!username || !password) {
+        adminLoginError.textContent = 'Please enter username and password';
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/admin/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
         });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            adminToken = data.token;
+            document.getElementById('admin-login-form').style.display = 'none';
+            document.getElementById('admin-content').style.display = 'block';
+            loadProductsList();
+            loadUploadedImages();
+        } else {
+            adminLoginError.textContent = data.message;
+        }
+    } catch (error) {
+        adminLoginError.textContent = 'Login failed. Please try again.';
+    }
+};
+
+window.switchAdminTab = function(tabId) {
+    document.querySelectorAll('.admin-tab').forEach(tab => {
+        tab.classList.remove('active');
     });
-}
+    document.querySelectorAll('.admin-tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    
+    document.querySelector(`.admin-tab[data-tab="${tabId}"]`).classList.add('active');
+    document.getElementById(tabId).classList.add('active');
+};
 
 // Load products list for management
 async function loadProductsList() {
@@ -904,153 +896,131 @@ async function loadProductsList() {
                         <h5>${product.name}</h5>
                         <p>${formatPrice(product.price)} | ${product.category}</p>
                     </div>
-                    <button class="delete-product" data-id="${product.id}">Delete</button>
+                    <button class="delete-product" data-id="${product.id}" onclick="deleteProduct(${product.id})">Delete</button>
                 </div>
             `).join('');
-            
-            document.querySelectorAll('.delete-product').forEach(btn => {
-                btn.addEventListener('click', async () => {
-                    if (confirm('Are you sure you want to delete this product?')) {
-                        const id = btn.dataset.id;
-                        const response = await fetch(`/api/products/${id}`, { method: 'DELETE' });
-                        const data = await response.json();
-                        if (data.success) {
-                            showNotification('Product deleted successfully', 'success');
-                            loadProductsList();
-                            loadProducts(); // Reload main products
-                        }
-                    }
-                });
-            });
         }
     } catch (error) {
         console.error('Error loading products:', error);
     }
 }
 
+window.deleteProduct = async function(id) {
+    if (confirm('Are you sure you want to delete this product?')) {
+        const response = await fetch(`/api/products/${id}`, { method: 'DELETE' });
+        const data = await response.json();
+        if (data.success) {
+            showNotification('Product deleted successfully', 'success');
+            loadProductsList();
+            loadProducts();
+        }
+    }
+};
+
 // Image preview for add product
-function initAddProductForm() {
-    const productImage = document.getElementById('product-image');
+window.previewProductImage = function(input) {
     const imagePreview = document.getElementById('image-preview');
+    imagePreview.innerHTML = '';
+    const file = input.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const img = document.createElement('img');
+            img.src = event.target.result;
+            imagePreview.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+    }
+};
+
+window.addNewProduct = async function(event) {
+    event.preventDefault();
     
-    if (productImage) {
-        productImage.addEventListener('change', (e) => {
-            imagePreview.innerHTML = '';
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    const img = document.createElement('img');
-                    img.src = event.target.result;
-                    imagePreview.appendChild(img);
-                };
-                reader.readAsDataURL(file);
-            }
+    const name = document.getElementById('product-name').value;
+    const category = document.getElementById('product-category').value;
+    const price = document.getElementById('product-price').value;
+    const oldPrice = document.getElementById('product-old-price').value;
+    const flash = document.getElementById('product-flash').checked;
+    const imageFile = document.getElementById('product-image').files[0];
+    
+    let imageUrl = '';
+    
+    if (imageFile) {
+        const formData = new FormData();
+        formData.append('image', imageFile);
+        
+        const uploadRes = await fetch('/api/upload-image', {
+            method: 'POST',
+            body: formData
         });
+        
+        const uploadData = await uploadRes.json();
+        if (uploadData.success) {
+            imageUrl = uploadData.imageUrl;
+        }
     }
     
-    const addProductForm = document.getElementById('add-product-form');
-    if (addProductForm) {
-        addProductForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const name = document.getElementById('product-name').value;
-            const category = document.getElementById('product-category').value;
-            const price = document.getElementById('product-price').value;
-            const oldPrice = document.getElementById('product-old-price').value;
-            const flash = document.getElementById('product-flash').checked;
-            const imageFile = document.getElementById('product-image').files[0];
-            
-            let imageUrl = '';
-            
-            if (imageFile) {
-                const formData = new FormData();
-                formData.append('image', imageFile);
-                
-                const uploadRes = await fetch('/api/upload-image', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const uploadData = await uploadRes.json();
-                if (uploadData.success) {
-                    imageUrl = uploadData.imageUrl;
-                }
-            }
-            
-            const response = await fetch('/api/products', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    name, category, price, oldPrice, imageUrl, flash
-                })
-            });
-            
-            const data = await response.json();
-            if (data.success) {
-                showNotification('Product added successfully!', 'success');
-                addProductForm.reset();
-                imagePreview.innerHTML = '';
-                loadProductsList();
-                loadProducts();
-            } else {
-                showNotification('Failed to add product', 'error');
-            }
-        });
+    const response = await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            name, category, price, oldPrice, imageUrl, flash
+        })
+    });
+    
+    const data = await response.json();
+    if (data.success) {
+        showNotification('Product added successfully!', 'success');
+        document.getElementById('add-product-form').reset();
+        document.getElementById('image-preview').innerHTML = '';
+        loadProductsList();
+        loadProducts();
+    } else {
+        showNotification('Failed to add product', 'error');
     }
-}
+};
 
 // Bulk image upload
-function initBulkUploadForm() {
-    const bulkImages = document.getElementById('bulk-images');
+window.previewBulkImages = function(input) {
     const bulkPreview = document.getElementById('bulk-preview');
-    const bulkUploadForm = document.getElementById('bulk-upload-form');
+    bulkPreview.innerHTML = '';
+    const files = Array.from(input.files);
+    files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const img = document.createElement('img');
+            img.src = event.target.result;
+            bulkPreview.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+    });
+};
+
+window.uploadMultipleImages = async function(event) {
+    event.preventDefault();
+    const files = document.getElementById('bulk-images').files;
+    let uploaded = 0;
     
-    if (bulkImages) {
-        bulkImages.addEventListener('change', (e) => {
-            bulkPreview.innerHTML = '';
-            const files = Array.from(e.target.files);
-            files.forEach(file => {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    const img = document.createElement('img');
-                    img.src = event.target.result;
-                    bulkPreview.appendChild(img);
-                };
-                reader.readAsDataURL(file);
-            });
+    for (const file of files) {
+        const formData = new FormData();
+        formData.append('image', file);
+        
+        const response = await fetch('/api/upload-image', {
+            method: 'POST',
+            body: formData
         });
+        
+        const data = await response.json();
+        if (data.success) uploaded++;
     }
     
-    if (bulkUploadForm) {
-        bulkUploadForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const files = bulkImages.files;
-            let uploaded = 0;
-            
-            for (const file of files) {
-                const formData = new FormData();
-                formData.append('image', file);
-                
-                const response = await fetch('/api/upload-image', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const data = await response.json();
-                if (data.success) uploaded++;
-            }
-            
-            showNotification(`Uploaded ${uploaded} images successfully!`, 'success');
-            bulkUploadForm.reset();
-            bulkPreview.innerHTML = '';
-            loadUploadedImages();
-        });
-    }
-}
+    showNotification(`Uploaded ${uploaded} images successfully!`, 'success');
+    document.getElementById('bulk-upload-form').reset();
+    document.getElementById('bulk-preview').innerHTML = '';
+    loadUploadedImages();
+};
 
 async function loadUploadedImages() {
-    // This would require a directory listing endpoint
     const container = document.getElementById('uploaded-images');
     if (container) {
         container.innerHTML = '<p>Images uploaded. You can select them when adding products.</p>';
@@ -1065,14 +1035,20 @@ async function init() {
     await loadProducts();
     startCountdown();
     initHeroSlider();
-    initCartModal();
-    initMpesaPayment();
     initSearchAndFilters();
-    initCategoryCards();
     initMobileMenu();
-    initNewsletter();
-    initAdminPanel();
     updateCartCount();
+    
+    // Close modals when clicking outside
+    window.addEventListener('click', (e) => {
+        const cartModal = document.getElementById('cart-modal');
+        const checkoutModal = document.getElementById('checkout-modal');
+        const adminOverlay = document.getElementById('admin-panel-overlay');
+        
+        if (e.target === cartModal) cartModal.style.display = 'none';
+        if (e.target === checkoutModal) checkoutModal.style.display = 'none';
+        if (e.target === adminOverlay) adminOverlay.style.display = 'none';
+    });
 }
 
 // Start everything when page loads
