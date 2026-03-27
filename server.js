@@ -10,28 +10,23 @@ const app = express();
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const uploadDir = path.join(__dirname, 'images');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
+    const imagesDir = path.join(__dirname, 'images');
+    if (!fs.existsSync(imagesDir)) {
+      fs.mkdirSync(imagesDir, { recursive: true });
     }
-    cb(null, uploadDir);
+    cb(null, imagesDir);
   },
   filename: function (req, file, cb) {
-    // Extract original name without extension
     const originalName = path.parse(file.originalname).name;
     const ext = path.extname(file.originalname);
     
-    // Check if this is a bulk upload with product number
-    let filename;
+    // Check if this is a product number upload
     if (req.body.productNumber) {
-      filename = `product${req.body.productNumber}${ext}`;
+      cb(null, `product${req.body.productNumber}${ext}`);
     } else {
-      // Generate unique filename with timestamp
       const timestamp = Date.now();
-      filename = `product-${timestamp}${ext}`;
+      cb(null, `image-${timestamp}${ext}`);
     }
-    
-    cb(null, filename);
   }
 });
 
@@ -79,32 +74,12 @@ if (!fs.existsSync(imagesDir)) {
   console.log('📁 Created images directory');
 }
 
-// Create placeholder images for missing product images
-async function createPlaceholderImages() {
-  const placeholderPath = path.join(imagesDir, 'placeholder.jpg');
-  if (!fs.existsSync(placeholderPath)) {
-    console.log('⚠️  Note: Add a placeholder.jpg to the images folder for default product images');
-  }
-  
-  // Create product1 to product100 placeholder directories if needed
-  for (let i = 1; i <= 100; i++) {
-    const productImagePath = path.join(imagesDir, `product${i}.jpg`);
-    if (!fs.existsSync(productImagePath)) {
-      // Don't create automatically - user should upload their own images
-      console.log(`📝 Ready for product${i}.jpg upload`);
-    }
-  }
-}
-
-createPlaceholderImages();
-
 try {
   if (fs.existsSync(PRODUCTS_FILE)) {
     const data = fs.readFileSync(PRODUCTS_FILE, 'utf8');
     products = JSON.parse(data);
     console.log(`✅ Loaded ${products.length} products from database`);
   } else {
-    // Start with empty products array
     products = [];
     fs.writeFileSync(PRODUCTS_FILE, JSON.stringify(products, null, 2));
     console.log(`📦 Created empty products database`);
@@ -176,32 +151,13 @@ app.get('/api/products/:id', (req, res) => {
   }
 });
 
-// Upload product image with specific product number
-app.post('/api/upload-product-image', upload.single('image'), (req, res) => {
+// Upload single product image
+app.post('/api/upload-image', upload.single('image'), (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
-    
-    const productNumber = req.body.productNumber;
-    let imageUrl = `/images/${req.file.filename}`;
-    
-    // If product number was provided, rename file to productX.ext
-    if (productNumber && productNumber >= 1 && productNumber <= 100) {
-      const ext = path.extname(req.file.filename);
-      const newFilename = `product${productNumber}${ext}`;
-      const oldPath = path.join(imagesDir, req.file.filename);
-      const newPath = path.join(imagesDir, newFilename);
-      
-      // Delete if file exists
-      if (fs.existsSync(newPath)) {
-        fs.unlinkSync(newPath);
-      }
-      
-      fs.renameSync(oldPath, newPath);
-      imageUrl = `/images/${newFilename}`;
-    }
-    
+    const imageUrl = `/images/${req.file.filename}`;
     console.log(`✅ Image uploaded: ${imageUrl}`);
     res.json({ 
       success: true, 
@@ -215,7 +171,44 @@ app.post('/api/upload-product-image', upload.single('image'), (req, res) => {
   }
 });
 
-// Upload multiple images (bulk upload for product1-product100)
+// Upload product image with specific product number
+app.post('/api/upload-product-image', upload.single('image'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+    
+    const productNumber = req.body.productNumber;
+    let imageUrl = `/images/${req.file.filename}`;
+    
+    if (productNumber && productNumber >= 1 && productNumber <= 100) {
+      const ext = path.extname(req.file.filename);
+      const newFilename = `product${productNumber}${ext}`;
+      const oldPath = path.join(imagesDir, req.file.filename);
+      const newPath = path.join(imagesDir, newFilename);
+      
+      if (fs.existsSync(newPath)) {
+        fs.unlinkSync(newPath);
+      }
+      
+      fs.renameSync(oldPath, newPath);
+      imageUrl = `/images/${newFilename}`;
+    }
+    
+    console.log(`✅ Product image uploaded: ${imageUrl}`);
+    res.json({ 
+      success: true, 
+      imageUrl: imageUrl,
+      filename: req.file.filename,
+      message: 'Product image uploaded successfully'
+    });
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({ error: 'Failed to upload image' });
+  }
+});
+
+// Upload bulk product images (product1 to product100)
 app.post('/api/upload-bulk-products', upload.array('images', 100), (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
@@ -235,7 +228,6 @@ app.post('/api/upload-bulk-products', upload.array('images', 100), (req, res) =>
         const oldPath = path.join(imagesDir, file.filename);
         const newPath = path.join(imagesDir, newFilename);
         
-        // Delete if file exists
         if (fs.existsSync(newPath)) {
           fs.unlinkSync(newPath);
         }
@@ -263,7 +255,6 @@ app.post('/api/upload-bulk-products', upload.array('images', 100), (req, res) =>
 
 // Get list of uploaded images
 app.get('/api/images', (req, res) => {
-  const imagesDir = path.join(__dirname, 'images');
   try {
     const files = fs.readdirSync(imagesDir);
     const images = files
@@ -295,10 +286,8 @@ app.get('/api/images', (req, res) => {
 app.post('/api/products', (req, res) => {
   const { name, category, price, oldPrice, imageUrl, flash, description, productNumber } = req.body;
   
-  // If product number provided, use it for the image URL
   let finalImageUrl = imageUrl;
   if (productNumber && !imageUrl) {
-    // Check if productX image exists
     const possibleExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
     for (const ext of possibleExtensions) {
       const imagePath = path.join(imagesDir, `product${productNumber}${ext}`);
@@ -362,7 +351,6 @@ app.delete('/api/products/:id', (req, res) => {
 // Bulk create products from product1 to product100 images
 app.post('/api/bulk-create-products', async (req, res) => {
   const { category, price, flash } = req.body;
-  const imagesDir = path.join(__dirname, 'images');
   
   try {
     const files = fs.readdirSync(imagesDir);
@@ -380,7 +368,6 @@ app.post('/api/bulk-create-products', async (req, res) => {
     const createdProducts = [];
     
     for (const img of productImages) {
-      // Check if product already exists with this product number
       const existingProduct = products.find(p => p.productNumber === img.number);
       if (!existingProduct) {
         const newProduct = {
@@ -395,7 +382,7 @@ app.post('/api/bulk-create-products', async (req, res) => {
           image: img.url,
           badge: flash ? 'flash' : null,
           flash: flash === true || flash === 'true',
-          description: `Product ${img.number} description`
+          description: `Product ${img.number} - High quality electronics product`
         };
         products.push(newProduct);
         createdProducts.push(newProduct);
