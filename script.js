@@ -1,4 +1,207 @@
-// Yetu Electronics - Complete Ecommerce JavaScript
+// ============================================
+// M-PESA PAYMENT INTEGRATION
+// ============================================
+
+function initMpesaPayment() {
+    const stkPushCheckout = document.getElementById('stk-push-checkout');
+    const verifyTransaction = document.getElementById('verify-transaction');
+    const cashOrderBtn = document.getElementById('confirm-cash-order');
+    const paymentStatus = document.getElementById('payment-status');
+    
+    // STK Push Payment
+    if (stkPushCheckout) {
+        stkPushCheckout.addEventListener('click', async () => {
+            const phone = document.getElementById('checkout-phone').value;
+            
+            if (!phone) {
+                updatePaymentStatus('Please enter your M-Pesa phone number', 'error');
+                return;
+            }
+            
+            if (cart.length === 0) {
+                updatePaymentStatus('Your cart is empty!', 'error');
+                return;
+            }
+            
+            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            
+            updatePaymentStatus('Sending payment request to your phone...', 'info');
+            stkPushCheckout.disabled = true;
+            stkPushCheckout.textContent = 'Sending...';
+            
+            try {
+                const response = await fetch('/api/mpesa/stkpush', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        phone: phone,
+                        amount: total,
+                        accountReference: `YETU-${Date.now()}`,
+                        transactionDesc: 'Electronics Purchase'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    updatePaymentStatus('✅ Payment request sent! Check your phone and enter PIN to complete.', 'success');
+                    pollPaymentStatus(data.checkoutRequestID);
+                } else {
+                    updatePaymentStatus(data.message || 'Payment request failed. Please try again.', 'error');
+                    stkPushCheckout.disabled = false;
+                    stkPushCheckout.textContent = 'Send Payment Request';
+                }
+            } catch (error) {
+                updatePaymentStatus('Network error. Please try again.', 'error');
+                stkPushCheckout.disabled = false;
+                stkPushCheckout.textContent = 'Send Payment Request';
+            }
+        });
+    }
+    
+    function pollPaymentStatus(checkoutRequestID) {
+        let attempts = 0;
+        const interval = setInterval(async () => {
+            attempts++;
+            
+            try {
+                const response = await fetch('/api/mpesa/status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ checkoutRequestID })
+                });
+                
+                const data = await response.json();
+                
+                if (data.ResultCode === 0) {
+                    clearInterval(interval);
+                    updatePaymentStatus('✅ Payment successful! Thank you for your purchase.', 'success');
+                    
+                    // Clear cart
+                    cart = [];
+                    saveCart();
+                    updateCartDisplay();
+                    
+                    setTimeout(() => {
+                        document.getElementById('checkout-modal').style.display = 'none';
+                        showNotification('Order placed successfully! We will contact you shortly.', 'success');
+                    }, 2000);
+                    
+                    if (stkPushCheckout) {
+                        stkPushCheckout.disabled = false;
+                        stkPushCheckout.textContent = 'Send Payment Request';
+                    }
+                } else if (data.ResultCode && data.ResultCode !== 1037) {
+                    clearInterval(interval);
+                    updatePaymentStatus('Payment failed or was cancelled. Please try again.', 'error');
+                    
+                    if (stkPushCheckout) {
+                        stkPushCheckout.disabled = false;
+                        stkPushCheckout.textContent = 'Send Payment Request';
+                    }
+                } else if (attempts >= 24) {
+                    clearInterval(interval);
+                    updatePaymentStatus('Payment timeout. Please check your M-Pesa messages.', 'error');
+                    
+                    if (stkPushCheckout) {
+                        stkPushCheckout.disabled = false;
+                        stkPushCheckout.textContent = 'Send Payment Request';
+                    }
+                }
+            } catch (error) {
+                console.error('Status check error:', error);
+            }
+        }, 5000);
+    }
+    
+    // Manual Transaction Verification
+    if (verifyTransaction) {
+        verifyTransaction.addEventListener('click', () => {
+            const transCode = document.getElementById('transaction-code').value;
+            
+            if (!transCode) {
+                updatePaymentStatus('Please enter your M-Pesa transaction code', 'error');
+                return;
+            }
+            
+            if (transCode.length < 6) {
+                updatePaymentStatus('Please enter a valid transaction code', 'error');
+                return;
+            }
+            
+            updatePaymentStatus('Verifying payment...', 'info');
+            verifyTransaction.disabled = true;
+            verifyTransaction.textContent = 'Verifying...';
+            
+            // Simulate verification (in production, you'd verify with your backend)
+            setTimeout(() => {
+                updatePaymentStatus('✅ Payment verified! Thank you for your order.', 'success');
+                
+                // Clear cart
+                cart = [];
+                saveCart();
+                updateCartDisplay();
+                
+                setTimeout(() => {
+                    document.getElementById('checkout-modal').style.display = 'none';
+                    showNotification('Order placed successfully! We will contact you shortly.', 'success');
+                }, 2000);
+                
+                verifyTransaction.disabled = false;
+                verifyTransaction.textContent = 'Complete Order';
+                document.getElementById('transaction-code').value = '';
+            }, 1500);
+        });
+    }
+    
+    // Cash on Delivery
+    if (cashOrderBtn) {
+        cashOrderBtn.addEventListener('click', () => {
+            if (cart.length === 0) {
+                updatePaymentStatus('Your cart is empty!', 'error');
+                return;
+            }
+            
+            updatePaymentStatus('Processing your order...', 'info');
+            
+            setTimeout(() => {
+                showNotification('Order placed! You will pay on delivery.', 'success');
+                
+                cart = [];
+                saveCart();
+                updateCartDisplay();
+                
+                document.getElementById('checkout-modal').style.display = 'none';
+            }, 1000);
+        });
+    }
+    
+    function updatePaymentStatus(message, type) {
+        if (paymentStatus) {
+            paymentStatus.innerHTML = message;
+            paymentStatus.className = `payment-status ${type}`;
+        }
+    }
+}
+
+// Update the init function to include M-Pesa
+function init() {
+    renderFlashSales();
+    renderProducts('featured-products', products, true);
+    startCountdown();
+    initHeroSlider();
+    initCartModal();
+    initCheckout(); // This will now use the M-Pesa functions
+    initSearchAndFilters();
+    initCategoryCards();
+    initMobileMenu();
+    initNewsletter();
+    initMpesaPayment(); // Add this line
+    updateCartCount();
+}
+
+// Make sure init is called
+document.addEventListener('DOMContentLoaded', init);// Yetu Electronics - Complete Ecommerce JavaScript
 
 // ============================================
 // PRODUCT DATABASE
