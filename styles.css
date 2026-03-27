@@ -1,5 +1,5 @@
 /* Admin Panel Styles */
-.admin-login-btn {
+.admin-trigger-btn {
     position: fixed;
     bottom: 20px;
     right: 20px;
@@ -16,27 +16,39 @@
     transition: all 0.3s;
 }
 
-.admin-login-btn:hover {
+.admin-trigger-btn:hover {
     transform: scale(1.1);
 }
 
-.admin-panel {
+.admin-panel-overlay {
     position: fixed;
     top: 0;
-    right: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 2000;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.admin-panel {
     width: 500px;
     max-width: 90vw;
     height: 100vh;
     background: var(--surface);
     box-shadow: -4px 0 20px rgba(0,0,0,0.2);
-    z-index: 2000;
     overflow-y: auto;
-    transform: translateX(100%);
-    transition: transform 0.3s ease;
+    animation: slideInRight 0.3s ease;
 }
 
-.admin-panel.open {
-    transform: translateX(0);
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+    }
+    to {
+        transform: translateX(0);
+    }
 }
 
 .admin-header {
@@ -64,20 +76,77 @@
     color: var(--text);
 }
 
+/* Admin Login Form */
+.admin-login-form {
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.admin-login-container {
+    max-width: 300px;
+    margin: 0 auto;
+}
+
+.admin-lock-icon {
+    font-size: 48px;
+    color: var(--primary);
+    margin-bottom: 20px;
+}
+
+.admin-login-container h4 {
+    margin-bottom: 20px;
+    color: var(--text);
+}
+
+.admin-input {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+}
+
+.admin-login-submit {
+    width: 100%;
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    margin-top: 10px;
+}
+
+.admin-error {
+    color: #ef4444;
+    font-size: 12px;
+    margin-top: 10px;
+}
+
+/* Admin Tabs */
 .admin-tabs {
     display: flex;
     border-bottom: 1px solid var(--border);
     padding: 0 20px;
+    background: var(--surface);
+    position: sticky;
+    top: 70px;
+    z-index: 9;
+    flex-wrap: wrap;
 }
 
 .admin-tab {
-    padding: 12px 20px;
+    padding: 12px 16px;
     background: none;
     border: none;
     cursor: pointer;
     font-weight: 500;
     color: var(--text);
     position: relative;
+    font-size: 14px;
 }
 
 .admin-tab.active {
@@ -103,6 +172,7 @@
     display: block;
 }
 
+/* Form Elements */
 .form-group {
     margin-bottom: 15px;
 }
@@ -111,6 +181,7 @@
     display: block;
     margin-bottom: 5px;
     font-weight: 500;
+    font-size: 14px;
 }
 
 .form-group input,
@@ -155,6 +226,7 @@
     cursor: pointer;
     font-weight: 600;
     width: 100%;
+    margin-top: 10px;
 }
 
 .image-preview,
@@ -174,10 +246,13 @@
     border: 1px solid var(--border);
 }
 
+/* Products List */
 .products-list {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    max-height: 500px;
+    overflow-y: auto;
 }
 
 .product-admin-item {
@@ -187,6 +262,7 @@
     padding: 10px;
     border: 1px solid var(--border);
     border-radius: 8px;
+    background: var(--bg);
 }
 
 .product-admin-item img {
@@ -202,6 +278,7 @@
 
 .product-admin-info h5 {
     margin: 0 0 5px;
+    font-size: 14px;
 }
 
 .product-admin-info p {
@@ -217,8 +294,14 @@
     padding: 6px 12px;
     border-radius: 6px;
     cursor: pointer;
+    font-size: 12px;
 }
 
+.delete-product:hover {
+    background: #dc2626;
+}
+
+/* Uploaded Images */
 .uploaded-images {
     margin-top: 20px;
     display: flex;
@@ -251,42 +334,26 @@
     font-size: 10px;
 }
 
-/* Admin Login Modal */
-.admin-login-modal {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.5);
-    z-index: 2001;
-    justify-content: center;
-    align-items: center;
-}
-
-.admin-login-content {
-    background: var(--surface);
-    padding: 30px;
-    border-radius: 16px;
-    width: 300px;
-    text-align: center;
-}
-
-.admin-login-content input {
-    width: 100%;
-    padding: 10px;
-    margin: 10px 0;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-}
-
 @media (max-width: 768px) {
     .admin-panel {
         width: 100%;
     }
     
+    .admin-tabs {
+        overflow-x: auto;
+        white-space: nowrap;
+        flex-wrap: nowrap;
+    }
+    
     .form-row {
         grid-template-columns: 1fr;
+    }
+    
+    .admin-trigger-btn {
+        bottom: 20px;
+        right: 20px;
+        width: 45px;
+        height: 45px;
+        font-size: 18px;
     }
 }
