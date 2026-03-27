@@ -232,8 +232,6 @@ footer { background: var(--dark); color: var(--white); padding: 40px 0 20px; }
 .checkbox label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
 .checkbox input { width: auto; }
 .submit-btn { background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; width: 100%; margin-top: 10px; }
-.image-preview, .bulk-preview { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 10px; }
-.image-preview img, .bulk-preview img { width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); }
 .products-list { display: flex; flex-direction: column; gap: 10px; max-height: 500px; overflow-y: auto; }
 .product-admin-item { display: flex; align-items: center; gap: 15px; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--white); }
 .product-admin-item img { width: 50px; height: 50px; object-fit: cover; border-radius: 6px; }
@@ -242,12 +240,6 @@ footer { background: var(--dark); color: var(--white); padding: 40px 0 20px; }
 .product-admin-info p { margin: 0; font-size: 12px; color: var(--primary); }
 .delete-product { background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; }
 .delete-product:hover { background: #dc2626; }
-
-/* Image Gallery */
-.image-gallery { margin-top: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
-.gallery-item { position: relative; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-.gallery-item img { width: 100%; height: 100px; object-fit: cover; }
-.copy-image-url { position: absolute; bottom: 5px; right: 5px; background: var(--primary); color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 10px; }
 
 /* Responsive */
 @media (max-width: 768px) {
