@@ -676,175 +676,6 @@ function initMobileMenu() {
 }
 
 // ============================================
-// IMAGE GALLERY FUNCTIONS
-// ============================================
-
-async function loadUploadedImages() {
-    try {
-        const response = await fetch('/api/images');
-        const data = await response.json();
-        const gallery = document.getElementById('image-gallery');
-        if (gallery) {
-            if (data.success && data.images && data.images.length > 0) {
-                const productImages = data.images.filter(img => img.productNumber);
-                const otherImages = data.images.filter(img => !img.productNumber);
-                let html = '';
-                if (productImages.length > 0) {
-                    html += `<h5 style="grid-column: 1/-1; margin-top: 10px;">Product Images (product1 - product100):</h5>`;
-                    html += productImages.map(image => `
-                        <div class="gallery-item" style="position: relative; border: 1px solid var(--border); border-radius: 8px; overflow: hidden;">
-                            <img src="${image.url}" alt="${image.name}" style="width: 100%; height: 100px; object-fit: cover;">
-                            <div style="position: absolute; top: 5px; left: 5px; background: var(--primary); color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px;">Product ${image.productNumber}</div>
-                            <button class="copy-image-url" onclick="copyImageUrl('${image.url}')" style="position: absolute; bottom: 5px; right: 5px; background: var(--primary); color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 10px;">Copy URL</button>
-                        </div>
-                    `).join('');
-                }
-                if (otherImages.length > 0) {
-                    html += `<h5 style="grid-column: 1/-1; margin-top: 10px;">Other Images:</h5>`;
-                    html += otherImages.map(image => `
-                        <div class="gallery-item" style="position: relative; border: 1px solid var(--border); border-radius: 8px; overflow: hidden;">
-                            <img src="${image.url}" alt="${image.name}" style="width: 100%; height: 100px; object-fit: cover;">
-                            <button class="copy-image-url" onclick="copyImageUrl('${image.url}')" style="position: absolute; bottom: 5px; right: 5px; background: var(--primary); color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 10px;">Copy URL</button>
-                        </div>
-                    `).join('');
-                }
-                gallery.innerHTML = html;
-            } else {
-                gallery.innerHTML = '<p style="grid-column: 1/-1; text-align: center;">No images uploaded yet. Upload images above.</p>';
-            }
-        }
-    } catch (error) {
-        console.error('Error loading images:', error);
-    }
-}
-
-window.copyImageUrl = function(url) {
-    navigator.clipboard.writeText(url).then(() => showNotification('Image URL copied to clipboard!', 'success'))
-        .catch(() => showNotification('Failed to copy URL', 'error'));
-};
-
-window.previewBulkImages = function(input) {
-    const bulkPreview = document.getElementById('bulk-preview');
-    bulkPreview.innerHTML = '';
-    Array.from(input.files).forEach(file => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const img = document.createElement('img');
-            img.src = e.target.result;
-            img.style.cssText = 'width: 80px; height: 80px; object-fit: cover; border-radius: 8px;';
-            bulkPreview.appendChild(img);
-        };
-        reader.readAsDataURL(file);
-    });
-};
-
-window.uploadBulkProductImages = async function(event) {
-    event.preventDefault();
-    const files = document.getElementById('bulk-images').files;
-    const startNumber = parseInt(document.getElementById('start-number').value) || 1;
-    
-    if (files.length === 0) { showNotification('Please select images to upload', 'error'); return; }
-    if (startNumber + files.length - 1 > 100) { showNotification('Maximum product number is 100. Please adjust start number.', 'error'); return; }
-    
-    const formData = new FormData();
-    for (let i = 0; i < files.length; i++) formData.append('images', files[i]);
-    formData.append('startNumber', startNumber);
-    
-    const uploadBtn = event.target.querySelector('button[type="submit"]');
-    uploadBtn.disabled = true;
-    uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
-    
-    try {
-        const response = await fetch('/api/upload-bulk-products', { method: 'POST', body: formData });
-        const data = await response.json();
-        if (data.success) {
-            showNotification(data.message, 'success');
-            document.getElementById('bulk-upload-form').reset();
-            document.getElementById('bulk-preview').innerHTML = '';
-            loadUploadedImages();
-        } else showNotification('Upload failed: ' + (data.error || 'Unknown error'), 'error');
-    } catch (error) { showNotification('Failed to upload images.', 'error'); }
-    finally { uploadBtn.disabled = false; uploadBtn.innerHTML = 'Upload Product Images'; }
-};
-
-window.bulkCreateProducts = async function() {
-    const category = prompt('Enter category for all products (phones, laptops, tvs, audio, accessories, gaming):', 'accessories');
-    if (!category) return;
-    const price = prompt('Enter default price for all products (in KSh):', '1000');
-    if (!price) return;
-    const flash = confirm('Add as flash sale items?');
-    
-    try {
-        const response = await fetch('/api/bulk-create-products', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ category, price: parseInt(price), flash })
-        });
-        const data = await response.json();
-        if (data.success) {
-            showNotification(data.message, 'success');
-            loadProducts();
-            loadProductsList();
-        } else showNotification('Failed to create products.', 'error');
-    } catch (error) { showNotification('Failed to create products.', 'error'); }
-};
-
-window.previewProductImage = function(input) {
-    const imagePreview = document.getElementById('image-preview');
-    imagePreview.innerHTML = '';
-    const file = input.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const img = document.createElement('img');
-            img.src = e.target.result;
-            img.style.cssText = 'width: 80px; height: 80px; object-fit: cover; border-radius: 8px;';
-            imagePreview.appendChild(img);
-        };
-        reader.readAsDataURL(file);
-    }
-    window.selectedImageUrl = '';
-};
-
-window.openImageSelector = async function() {
-    const modal = document.createElement('div');
-    modal.className = 'image-selector-modal';
-    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 3000; display: flex; justify-content: center; align-items: center;';
-    modal.innerHTML = `
-        <div style="background: white; width: 90%; max-width: 800px; max-height: 80vh; border-radius: 16px; overflow: hidden;">
-            <div style="padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between;">
-                <h3>Select Image from Gallery</h3>
-                <button onclick="this.closest('.image-selector-modal').remove()" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
-            </div>
-            <div id="image-selector-grid" style="padding: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 15px; max-height: 60vh; overflow-y: auto;">Loading images...</div>
-        </div>
-    `;
-    document.body.appendChild(modal);
-    
-    try {
-        const response = await fetch('/api/images');
-        const data = await response.json();
-        const grid = document.getElementById('image-selector-grid');
-        if (data.success && data.images && data.images.length > 0) {
-            grid.innerHTML = data.images.map(image => `
-                <div style="cursor: pointer; border: 2px solid transparent; border-radius: 8px; overflow: hidden;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='transparent'" onclick="selectImageForProduct('${image.url}')">
-                    <img src="${image.url}" style="width: 100%; height: 120px; object-fit: cover;">
-                    <p style="font-size: 10px; padding: 5px; text-align: center;">${image.name.substring(0, 20)}</p>
-                </div>
-            `).join('');
-        } else grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center;">No images uploaded yet.</p>';
-    } catch (error) { document.getElementById('image-selector-grid').innerHTML = '<p style="color: red;">Failed to load images</p>'; }
-};
-
-window.selectImageForProduct = function(imageUrl) {
-    const imagePreview = document.getElementById('image-preview');
-    imagePreview.innerHTML = `<img src="${imageUrl}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;">`;
-    window.selectedImageUrl = imageUrl;
-    document.querySelector('.image-selector-modal')?.remove();
-    showNotification('Image selected!', 'success');
-};
-
-// ============================================
 // ADMIN PANEL
 // ============================================
 
@@ -875,7 +706,6 @@ window.adminLogin = async function() {
             document.getElementById('admin-login-form').style.display = 'none';
             document.getElementById('admin-content').style.display = 'block';
             loadProductsList();
-            loadUploadedImages();
         } else adminLoginError.textContent = data.message;
     } catch (error) { adminLoginError.textContent = 'Login failed. Please try again.'; }
 };
@@ -922,30 +752,29 @@ window.addNewProduct = async function(event) {
     const flash = document.getElementById('product-flash').checked;
     const description = document.getElementById('product-description').value;
     const productNumber = document.getElementById('product-number').value;
-    const imageFile = document.getElementById('product-image').files[0];
+    let imageUrl = document.getElementById('product-image-url').value;
     
-    let imageUrl = window.selectedImageUrl || '';
-    if (imageFile) {
-        const formData = new FormData();
-        formData.append('image', imageFile);
-        if (productNumber) formData.append('productNumber', productNumber);
-        const uploadRes = await fetch('/api/upload-product-image', { method: 'POST', body: formData });
-        const uploadData = await uploadRes.json();
-        if (uploadData.success) imageUrl = uploadData.imageUrl;
+    // If product number provided and no image URL, generate the URL
+    if (productNumber && !imageUrl) {
+        imageUrl = `/images/product${productNumber}.jpg`;
     }
-    if (!imageUrl) { showNotification('Please select an image for the product', 'error'); return; }
+    
+    if (!imageUrl) {
+        showNotification('Please enter an image URL', 'error');
+        return;
+    }
     
     const response = await fetch('/api/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, category, price, oldPrice, imageUrl, flash, description, productNumber: productNumber || null })
+        body: JSON.stringify({
+            name, category, price, oldPrice, imageUrl, flash, description, productNumber: productNumber || null
+        })
     });
     const data = await response.json();
     if (data.success) {
         showNotification('Product added successfully!', 'success');
         document.getElementById('add-product-form').reset();
-        document.getElementById('image-preview').innerHTML = '';
-        window.selectedImageUrl = '';
         loadProductsList();
         loadProducts();
     } else showNotification('Failed to add product', 'error');
