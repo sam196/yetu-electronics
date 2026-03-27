@@ -51,7 +51,7 @@ function saveCart() {
 function showNotification(message, type) {
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
-    notification.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> ${message}`;
+    notification.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i> ${message}`;
     notification.style.cssText = `
         position: fixed;
         top: 20px;
@@ -384,22 +384,28 @@ async function loadProducts() {
         products = await response.json();
         console.log(`✅ Loaded ${products.length} products from server`);
         
+        // Update category counts
+        updateCategoryCounts();
+        
         // Re-render all product sections
         renderFlashSales();
         renderProducts('featured-products', products, true);
         updateAllProducts();
     } catch (error) {
         console.error('Error loading products:', error);
-        // Fallback to default products if server fails
-        products = [
-            { id: 1, name: "iPhone 15 Pro Max", category: "phones", price: 165000, oldPrice: 185000, rating: 4.8, reviews: 234, image: "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=300", badge: "flash", flash: true },
-            { id: 2, name: "Samsung Galaxy S24 Ultra", category: "phones", price: 155000, oldPrice: 175000, rating: 4.7, reviews: 189, image: "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=300", badge: "new" },
-            { id: 3, name: "MacBook Pro M3", category: "laptops", price: 210000, oldPrice: 240000, rating: 4.9, reviews: 345, image: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=300", badge: "flash", flash: true }
-        ];
-        renderFlashSales();
-        renderProducts('featured-products', products, true);
-        updateAllProducts();
+        showNotification('Failed to load products. Please refresh the page.', 'error');
     }
+}
+
+function updateCategoryCounts() {
+    const categories = ['phones', 'laptops', 'tvs', 'audio', 'accessories', 'gaming'];
+    categories.forEach(cat => {
+        const count = products.filter(p => p.category === cat).length;
+        const categoryCard = document.querySelector(`.category-card[data-cat="${cat}"] p`);
+        if (categoryCard) {
+            categoryCard.textContent = `${count}+ products`;
+        }
+    });
 }
 
 // ============================================
@@ -417,7 +423,7 @@ function renderProducts(containerId, productList, isFeatured = false) {
     }
     
     if (productsToShow.length === 0) {
-        container.innerHTML = '<div style="text-align:center; padding:40px;">No products available</div>';
+        container.innerHTML = '<div style="text-align:center; padding:40px;">No products available. Add products in admin panel.</div>';
         return;
     }
     
@@ -425,7 +431,7 @@ function renderProducts(containerId, productList, isFeatured = false) {
         <div class="product-card" data-id="${product.id}" data-category="${product.category}">
             ${product.badge ? `<div class="product-badge ${product.badge === 'flash' ? 'flash' : ''}">${product.badge === 'flash' ? '🔥 Flash Sale' : '✨ New'}</div>` : ''}
             <div class="product-image">
-                <img src="${product.image}" alt="${product.name}" loading="lazy" onerror="this.src='https://placehold.co/300x300?text=No+Image'">
+                <img src="${product.image}" alt="${product.name}" loading="lazy" onerror="this.src='https://via.placeholder.com/300x300?text=No+Image'">
             </div>
             <div class="product-info">
                 <h4 class="product-title">${product.name}</h4>
@@ -459,7 +465,7 @@ function renderFlashSales() {
         <div class="product-card">
             <div class="product-badge flash">🔥 Flash Sale</div>
             <div class="product-image">
-                <img src="${product.image}" alt="${product.name}" onerror="this.src='https://placehold.co/300x300?text=No+Image'">
+                <img src="${product.image}" alt="${product.name}" onerror="this.src='https://via.placeholder.com/300x300?text=No+Image'">
             </div>
             <div class="product-info">
                 <h4 class="product-title">${product.name}</h4>
@@ -520,7 +526,7 @@ function updateCartDisplay() {
         return `
             <div class="cart-item" data-id="${item.id}">
                 <div class="cart-item-image">
-                    <img src="${item.image}" alt="${item.name}" onerror="this.src='https://placehold.co/70x70?text=No+Image'">
+                    <img src="${item.image}" alt="${item.name}" onerror="this.src='https://via.placeholder.com/70x70?text=No+Image'">
                 </div>
                 <div class="cart-item-details">
                     <div class="cart-item-title">${item.name}</div>
@@ -737,7 +743,7 @@ function updateAllProducts() {
             <div class="product-card">
                 ${product.badge ? `<div class="product-badge ${product.badge === 'flash' ? 'flash' : ''}">${product.badge === 'flash' ? '🔥 Flash Sale' : '✨ New'}</div>` : ''}
                 <div class="product-image">
-                    <img src="${product.image}" alt="${product.name}" onerror="this.src='https://placehold.co/300x300?text=No+Image'">
+                    <img src="${product.image}" alt="${product.name}" onerror="this.src='https://via.placeholder.com/300x300?text=No+Image'">
                 </div>
                 <div class="product-info">
                     <h4 class="product-title">${product.name}</h4>
@@ -823,6 +829,199 @@ function initMobileMenu() {
 }
 
 // ============================================
+// IMAGE GALLERY FUNCTIONS
+// ============================================
+
+// Load all uploaded images for gallery
+async function loadUploadedImages() {
+    try {
+        const response = await fetch('/api/images');
+        const data = await response.json();
+        
+        const gallery = document.getElementById('image-gallery');
+        if (gallery) {
+            if (data.success && data.images && data.images.length > 0) {
+                gallery.innerHTML = data.images.map(image => `
+                    <div class="gallery-item" style="position: relative; border: 1px solid var(--border); border-radius: 8px; overflow: hidden;">
+                        <img src="${image.url}" alt="${image.name}" style="width: 100%; height: 100px; object-fit: cover;">
+                        <button class="copy-image-url" data-url="${image.url}" onclick="copyImageUrl('${image.url}')" style="position: absolute; bottom: 5px; right: 5px; background: var(--primary); color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 10px;">
+                            Copy URL
+                        </button>
+                    </div>
+                `).join('');
+            } else {
+                gallery.innerHTML = '<p style="grid-column: 1/-1; text-align: center;">No images uploaded yet. Upload some images above.</p>';
+            }
+        }
+    } catch (error) {
+        console.error('Error loading images:', error);
+    }
+}
+
+// Copy image URL to clipboard
+window.copyImageUrl = function(url) {
+    navigator.clipboard.writeText(url).then(() => {
+        showNotification('Image URL copied to clipboard!', 'success');
+    }).catch(() => {
+        showNotification('Failed to copy URL', 'error');
+    });
+};
+
+// Preview bulk images before upload
+window.previewBulkImages = function(input) {
+    const bulkPreview = document.getElementById('bulk-preview');
+    bulkPreview.innerHTML = '';
+    const files = Array.from(input.files);
+    files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const img = document.createElement('img');
+            img.src = event.target.result;
+            img.style.width = '80px';
+            img.style.height = '80px';
+            img.style.objectFit = 'cover';
+            img.style.borderRadius = '8px';
+            bulkPreview.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+    });
+};
+
+// Upload multiple images
+window.uploadMultipleImages = async function(event) {
+    event.preventDefault();
+    const files = document.getElementById('bulk-images').files;
+    
+    if (files.length === 0) {
+        showNotification('Please select images to upload', 'error');
+        return;
+    }
+    
+    const formData = new FormData();
+    for (let i = 0; i < files.length; i++) {
+        formData.append('images', files[i]);
+    }
+    
+    const uploadBtn = event.target.querySelector('button[type="submit"]');
+    uploadBtn.disabled = true;
+    uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+    
+    try {
+        const response = await fetch('/api/upload-multiple', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification(data.message, 'success');
+            document.getElementById('bulk-upload-form').reset();
+            document.getElementById('bulk-preview').innerHTML = '';
+            loadUploadedImages();
+        } else {
+            showNotification('Upload failed: ' + (data.error || 'Unknown error'), 'error');
+        }
+    } catch (error) {
+        console.error('Upload error:', error);
+        showNotification('Failed to upload images. Please try again.', 'error');
+    } finally {
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = 'Upload Images';
+    }
+};
+
+// Open image selector modal
+window.openImageSelector = function() {
+    const modal = document.createElement('div');
+    modal.className = 'image-selector-modal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        z-index: 3000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    `;
+    
+    modal.innerHTML = `
+        <div style="background: white; width: 90%; max-width: 800px; max-height: 80vh; border-radius: 16px; overflow: hidden;">
+            <div style="padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between;">
+                <h3>Select Image from Gallery</h3>
+                <button onclick="this.closest('.image-selector-modal').remove()" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+            </div>
+            <div id="image-selector-grid" style="padding: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 15px; max-height: 60vh; overflow-y: auto;">
+                Loading images...
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    loadImagesForSelector();
+};
+
+async function loadImagesForSelector() {
+    try {
+        const response = await fetch('/api/images');
+        const data = await response.json();
+        const grid = document.getElementById('image-selector-grid');
+        
+        if (data.success && data.images && data.images.length > 0) {
+            grid.innerHTML = data.images.map(image => `
+                <div style="cursor: pointer; border: 2px solid transparent; border-radius: 8px; overflow: hidden; transition: all 0.3s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='transparent'" onclick="selectImageForProduct('${image.url}')">
+                    <img src="${image.url}" style="width: 100%; height: 120px; object-fit: cover;">
+                    <p style="font-size: 10px; padding: 5px; text-align: center; word-break: break-all;">${image.name.substring(0, 20)}</p>
+                </div>
+            `).join('');
+        } else {
+            grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center;">No images uploaded yet. Please upload images first.</p>';
+        }
+    } catch (error) {
+        console.error('Error loading images:', error);
+        document.getElementById('image-selector-grid').innerHTML = '<p style="color: red;">Failed to load images</p>';
+    }
+}
+
+window.selectImageForProduct = function(imageUrl) {
+    const imagePreview = document.getElementById('image-preview');
+    imagePreview.innerHTML = `<img src="${imageUrl}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;">`;
+    
+    // Store the URL to be used when submitting
+    window.selectedImageUrl = imageUrl;
+    
+    // Close the modal
+    const modal = document.querySelector('.image-selector-modal');
+    if (modal) modal.remove();
+    
+    showNotification('Image selected!', 'success');
+};
+
+// Preview single image
+window.previewProductImage = function(input) {
+    const imagePreview = document.getElementById('image-preview');
+    imagePreview.innerHTML = '';
+    const file = input.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const img = document.createElement('img');
+            img.src = event.target.result;
+            img.style.width = '80px';
+            img.style.height = '80px';
+            img.style.objectFit = 'cover';
+            img.style.borderRadius = '8px';
+            imagePreview.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+    }
+    window.selectedImageUrl = '';
+};
+
+// ============================================
 // ADMIN PANEL
 // ============================================
 
@@ -885,13 +1084,18 @@ window.switchAdminTab = function(tabId) {
 async function loadProductsList() {
     try {
         const response = await fetch('/api/products');
-        const products = await response.json();
+        const productsList = await response.json();
         
         const container = document.getElementById('products-list');
         if (container) {
-            container.innerHTML = products.map(product => `
+            if (productsList.length === 0) {
+                container.innerHTML = '<p style="text-align: center; padding: 20px;">No products yet. Add your first product above.</p>';
+                return;
+            }
+            
+            container.innerHTML = productsList.map(product => `
                 <div class="product-admin-item">
-                    <img src="${product.image}" alt="${product.name}" onerror="this.src='https://placehold.co/50x50?text=No+Image'">
+                    <img src="${product.image}" alt="${product.name}" onerror="this.src='https://via.placeholder.com/50x50?text=No+Image'">
                     <div class="product-admin-info">
                         <h5>${product.name}</h5>
                         <p>${formatPrice(product.price)} | ${product.category}</p>
@@ -917,22 +1121,7 @@ window.deleteProduct = async function(id) {
     }
 };
 
-// Image preview for add product
-window.previewProductImage = function(input) {
-    const imagePreview = document.getElementById('image-preview');
-    imagePreview.innerHTML = '';
-    const file = input.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const img = document.createElement('img');
-            img.src = event.target.result;
-            imagePreview.appendChild(img);
-        };
-        reader.readAsDataURL(file);
-    }
-};
-
+// Add new product
 window.addNewProduct = async function(event) {
     event.preventDefault();
     
@@ -941,10 +1130,12 @@ window.addNewProduct = async function(event) {
     const price = document.getElementById('product-price').value;
     const oldPrice = document.getElementById('product-old-price').value;
     const flash = document.getElementById('product-flash').checked;
+    const description = document.getElementById('product-description').value;
     const imageFile = document.getElementById('product-image').files[0];
     
-    let imageUrl = '';
+    let imageUrl = window.selectedImageUrl || '';
     
+    // If a new file was uploaded, upload it first
     if (imageFile) {
         const formData = new FormData();
         formData.append('image', imageFile);
@@ -960,11 +1151,23 @@ window.addNewProduct = async function(event) {
         }
     }
     
+    // If no image URL is set, show error
+    if (!imageUrl) {
+        showNotification('Please select an image for the product', 'error');
+        return;
+    }
+    
     const response = await fetch('/api/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            name, category, price, oldPrice, imageUrl, flash
+            name, 
+            category, 
+            price, 
+            oldPrice, 
+            imageUrl, 
+            flash,
+            description
         })
     });
     
@@ -973,59 +1176,13 @@ window.addNewProduct = async function(event) {
         showNotification('Product added successfully!', 'success');
         document.getElementById('add-product-form').reset();
         document.getElementById('image-preview').innerHTML = '';
+        window.selectedImageUrl = '';
         loadProductsList();
         loadProducts();
     } else {
         showNotification('Failed to add product', 'error');
     }
 };
-
-// Bulk image upload
-window.previewBulkImages = function(input) {
-    const bulkPreview = document.getElementById('bulk-preview');
-    bulkPreview.innerHTML = '';
-    const files = Array.from(input.files);
-    files.forEach(file => {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const img = document.createElement('img');
-            img.src = event.target.result;
-            bulkPreview.appendChild(img);
-        };
-        reader.readAsDataURL(file);
-    });
-};
-
-window.uploadMultipleImages = async function(event) {
-    event.preventDefault();
-    const files = document.getElementById('bulk-images').files;
-    let uploaded = 0;
-    
-    for (const file of files) {
-        const formData = new FormData();
-        formData.append('image', file);
-        
-        const response = await fetch('/api/upload-image', {
-            method: 'POST',
-            body: formData
-        });
-        
-        const data = await response.json();
-        if (data.success) uploaded++;
-    }
-    
-    showNotification(`Uploaded ${uploaded} images successfully!`, 'success');
-    document.getElementById('bulk-upload-form').reset();
-    document.getElementById('bulk-preview').innerHTML = '';
-    loadUploadedImages();
-};
-
-async function loadUploadedImages() {
-    const container = document.getElementById('uploaded-images');
-    if (container) {
-        container.innerHTML = '<p>Images uploaded. You can select them when adding products.</p>';
-    }
-}
 
 // ============================================
 // INITIALIZE EVERYTHING
