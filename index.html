@@ -132,32 +132,32 @@
             <div class="category-card" data-cat="phones" onclick="filterByCategory(event, 'phones')">
                 <i class="fas fa-mobile-alt"></i>
                 <h4>Phones</h4>
-                <p>200+ products</p>
+                <p>0 products</p>
             </div>
             <div class="category-card" data-cat="laptops" onclick="filterByCategory(event, 'laptops')">
                 <i class="fas fa-laptop"></i>
                 <h4>Laptops</h4>
-                <p>150+ products</p>
+                <p>0 products</p>
             </div>
             <div class="category-card" data-cat="tvs" onclick="filterByCategory(event, 'tvs')">
                 <i class="fas fa-tv"></i>
                 <h4>TVs</h4>
-                <p>80+ products</p>
+                <p>0 products</p>
             </div>
             <div class="category-card" data-cat="audio" onclick="filterByCategory(event, 'audio')">
                 <i class="fas fa-headphones"></i>
                 <h4>Audio</h4>
-                <p>120+ products</p>
+                <p>0 products</p>
             </div>
             <div class="category-card" data-cat="accessories" onclick="filterByCategory(event, 'accessories')">
                 <i class="fas fa-plug"></i>
                 <h4>Accessories</h4>
-                <p>300+ products</p>
+                <p>0 products</p>
             </div>
             <div class="category-card" data-cat="gaming" onclick="filterByCategory(event, 'gaming')">
                 <i class="fas fa-gamepad"></i>
                 <h4>Gaming</h4>
-                <p>60+ products</p>
+                <p>0 products</p>
             </div>
         </div>
     </div>
@@ -431,6 +431,9 @@
                         <label>Product Image:</label>
                         <input type="file" id="product-image" accept="image/*" onchange="previewProductImage(this)">
                         <div id="image-preview" class="image-preview"></div>
+                        <button type="button" class="submit-btn" style="margin-top: 10px; background: #6b7280;" onclick="openImageSelector()">
+                            <i class="fas fa-images"></i> Select from Gallery
+                        </button>
                     </div>
                     
                     <div class="form-group">
@@ -465,7 +468,11 @@
                     </div>
                     <button type="submit" class="submit-btn">Upload Images</button>
                 </form>
-                <div id="uploaded-images" class="uploaded-images"></div>
+                
+                <h4 style="margin-top: 30px;">Image Gallery</h4>
+                <div id="image-gallery" class="image-gallery" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-top: 15px;">
+                    <p>Loading images...</p>
+                </div>
             </div>
         </div>
     </div>
