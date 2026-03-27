@@ -400,6 +400,12 @@
                 <h4>Add New Product</h4>
                 <form id="add-product-form" enctype="multipart/form-data" onsubmit="addNewProduct(event)">
                     <div class="form-group">
+                        <label>Product Number (Optional - for productX.jpg naming):</label>
+                        <input type="number" id="product-number" placeholder="1-100" min="1" max="100">
+                        <small>If provided, image will be saved as product[number].jpg</small>
+                    </div>
+                    
+                    <div class="form-group">
                         <label>Product Name:</label>
                         <input type="text" id="product-name" required>
                     </div>
@@ -459,18 +465,40 @@
             
             <!-- Upload Images Tab -->
             <div id="upload-images" class="admin-tab-content">
-                <h4>Upload Multiple Images</h4>
-                <form id="bulk-upload-form" enctype="multipart/form-data" onsubmit="uploadMultipleImages(event)">
+                <h4>Bulk Upload Product Images (product1 - product100)</h4>
+                
+                <div class="upload-info" style="background: var(--light); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <p><i class="fas fa-info-circle"></i> <strong>Instructions:</strong></p>
+                    <ul style="margin-left: 20px; margin-top: 10px;">
+                        <li>Upload images that will be named product1.jpg, product2.jpg, etc.</li>
+                        <li>You can upload up to 100 images at once</li>
+                        <li>Images will be automatically renamed to product1.jpg, product2.jpg, etc.</li>
+                        <li>Supported formats: JPG, PNG, GIF, WEBP (max 5MB each)</li>
+                        <li>After uploading, you can bulk create products from these images</li>
+                    </ul>
+                </div>
+                
+                <form id="bulk-upload-form" enctype="multipart/form-data" onsubmit="uploadBulkProductImages(event)">
                     <div class="form-group">
-                        <label>Select Images (max 5MB each):</label>
-                        <input type="file" id="bulk-images" accept="image/*" multiple onchange="previewBulkImages(this)">
-                        <div id="bulk-preview" class="bulk-preview"></div>
+                        <label>Start Product Number:</label>
+                        <input type="number" id="start-number" value="1" min="1" max="100">
+                        <small>Images will be named starting from this number</small>
                     </div>
-                    <button type="submit" class="submit-btn">Upload Images</button>
+                    
+                    <div class="form-group">
+                        <label>Select Images (up to 100 files):</label>
+                        <input type="file" id="bulk-images" accept="image/*" multiple onchange="previewBulkImages(this)">
+                        <div id="bulk-preview" class="bulk-preview" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px;"></div>
+                    </div>
+                    <button type="submit" class="submit-btn">Upload Product Images</button>
                 </form>
                 
                 <h4 style="margin-top: 30px;">Image Gallery</h4>
-                <div id="image-gallery" class="image-gallery" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-top: 15px;">
+                <div class="image-gallery-controls" style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <button onclick="loadUploadedImages()" class="submit-btn" style="width: auto; padding: 8px 16px;">Refresh Gallery</button>
+                    <button onclick="bulkCreateProducts()" class="submit-btn" style="width: auto; padding: 8px 16px; background: var(--secondary);">Bulk Create Products</button>
+                </div>
+                <div id="image-gallery" class="image-gallery" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-top: 15px;">
                     <p>Loading images...</p>
                 </div>
             </div>
