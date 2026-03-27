@@ -1,10 +1,5 @@
 // ============================================
 // YETU ELECTRONICS - COMPLETE JAVASCRIPT
-// Eldoret Store with M-Pesa STK Push
-// ============================================
-
-// ============================================
-// PRODUCT DATABASE (Will be loaded from server)
 // ============================================
 
 let products = [];
@@ -13,13 +8,7 @@ let currentFilter = "all";
 let currentSort = "default";
 let currentSearch = "";
 let displayedProducts = 12;
-
-// Admin session
 let adminToken = null;
-
-// ============================================
-// HELPER FUNCTIONS
-// ============================================
 
 function formatPrice(price) {
     return `KSh ${price.toLocaleString()}`;
@@ -68,27 +57,14 @@ function showNotification(message, type) {
     setTimeout(() => notification.remove(), 3000);
 }
 
-// Add CSS animation for notifications
 const notificationStyle = document.createElement('style');
-notificationStyle.textContent = `
-    @keyframes slideIn {
-        from {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-`;
+notificationStyle.textContent = `@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }`;
 document.head.appendChild(notificationStyle);
 
 // ============================================
 // CLICK HANDLERS
 // ============================================
 
-// Cart modal functions
 window.openCartModal = function(event) {
     if (event) event.preventDefault();
     const cartModal = document.getElementById('cart-modal');
@@ -108,13 +84,11 @@ window.closeCheckoutModal = function() {
     if (checkoutModal) checkoutModal.style.display = 'none';
 };
 
-// Filter by category
 window.filterByCategory = function(event, category) {
     if (event) event.preventDefault();
     currentFilter = category;
     displayedProducts = 12;
     
-    // Update active state in category menu
     document.querySelectorAll('.category-menu a').forEach(link => {
         if (link.dataset.category === category) {
             link.classList.add('active');
@@ -123,7 +97,6 @@ window.filterByCategory = function(event, category) {
         }
     });
     
-    // Update filter buttons
     document.querySelectorAll('.filter-btn').forEach(btn => {
         if (btn.dataset.filter === category) {
             btn.classList.add('active');
@@ -133,21 +106,15 @@ window.filterByCategory = function(event, category) {
     });
     
     updateAllProducts();
-    
-    // Smooth scroll to products section
     const productsSection = document.getElementById('products');
-    if (productsSection) {
-        productsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    if (productsSection) productsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 };
 
-// Filter by filter button
 window.filterByFilterBtn = function(event, category) {
     if (event) event.preventDefault();
     currentFilter = category;
     displayedProducts = 12;
     
-    // Update filter buttons
     document.querySelectorAll('.filter-btn').forEach(btn => {
         if (btn.dataset.filter === category) {
             btn.classList.add('active');
@@ -156,7 +123,6 @@ window.filterByFilterBtn = function(event, category) {
         }
     });
     
-    // Update category menu
     document.querySelectorAll('.category-menu a').forEach(link => {
         if (link.dataset.category === category) {
             link.classList.add('active');
@@ -168,7 +134,6 @@ window.filterByFilterBtn = function(event, category) {
     updateAllProducts();
 };
 
-// Scroll functions
 window.scrollToHome = function(event) {
     if (event) event.preventDefault();
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -177,12 +142,9 @@ window.scrollToHome = function(event) {
 window.scrollToProducts = function(event) {
     if (event) event.preventDefault();
     const productsSection = document.getElementById('products');
-    if (productsSection) {
-        productsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    if (productsSection) productsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 };
 
-// Account and info functions
 window.showAccountMenu = function(event) {
     if (event) event.preventDefault();
     showNotification('Account features coming soon!', 'info');
@@ -208,7 +170,6 @@ window.sendEmail = function(event) {
     window.location.href = 'mailto:sales@yetu.com';
 };
 
-// Customer service functions
 window.showContactPage = function(event) {
     if (event) event.preventDefault();
     showNotification('Contact us: 0741 842 196 or sales@yetu.com', 'info');
@@ -216,7 +177,7 @@ window.showContactPage = function(event) {
 
 window.showFAQs = function(event) {
     if (event) event.preventDefault();
-    showNotification('FAQs:\n1. How to order? Add items to cart and checkout\n2. Delivery time: 1-3 business days\n3. Returns: 7-day hassle-free returns', 'info');
+    showNotification('FAQs: How to order? Add items to cart and checkout. Delivery: 1-3 business days. Returns: 7-day hassle-free.', 'info');
 };
 
 window.showReturnsPolicy = function(event) {
@@ -234,7 +195,6 @@ window.showPaymentMethods = function(event) {
     showNotification('We accept M-Pesa (STK Push), Bank Transfer, and Cash on Delivery.', 'info');
 };
 
-// Newsletter
 window.handleNewsletterSubmit = function(event) {
     event.preventDefault();
     const email = event.target.querySelector('input').value;
@@ -242,7 +202,6 @@ window.handleNewsletterSubmit = function(event) {
     event.target.reset();
 };
 
-// Proceed to checkout
 window.proceedToCheckout = function() {
     if (cart.length === 0) {
         showNotification('Your cart is empty!', 'error');
@@ -255,7 +214,10 @@ window.proceedToCheckout = function() {
     updateOrderSummary();
 };
 
-// M-Pesa payment
+// ============================================
+// M-PESA PAYMENT
+// ============================================
+
 window.initiateMpesaPayment = async function() {
     const phone = document.getElementById('checkout-phone').value.trim();
     const paymentStatus = document.getElementById('payment-status');
@@ -334,16 +296,13 @@ function pollPaymentStatus(checkoutRequestID, totalAmount) {
             if (data.ResultCode === 0) {
                 clearInterval(interval);
                 updatePaymentStatus('✅ Payment successful! Thank you for shopping at Yetu Electronics Eldoret!', 'success');
-                
                 cart = [];
                 saveCart();
                 updateCartDisplay();
-                
                 setTimeout(() => {
                     document.getElementById('checkout-modal').style.display = 'none';
                     showNotification(`Order placed successfully! Total: ${formatPrice(totalAmount)}`, 'success');
                 }, 2000);
-                
                 const stkPushBtn = document.getElementById('stk-push-checkout');
                 if (stkPushBtn) {
                     stkPushBtn.disabled = false;
@@ -352,7 +311,6 @@ function pollPaymentStatus(checkoutRequestID, totalAmount) {
             } else if (data.ResultCode && data.ResultCode !== 1037) {
                 clearInterval(interval);
                 updatePaymentStatus('❌ Payment failed or was cancelled. Please try again.', 'error');
-                
                 const stkPushBtn = document.getElementById('stk-push-checkout');
                 if (stkPushBtn) {
                     stkPushBtn.disabled = false;
@@ -361,7 +319,6 @@ function pollPaymentStatus(checkoutRequestID, totalAmount) {
             } else if (attempts >= 24) {
                 clearInterval(interval);
                 updatePaymentStatus('Payment timeout. Please check your M-Pesa messages and contact support.', 'error');
-                
                 const stkPushBtn = document.getElementById('stk-push-checkout');
                 if (stkPushBtn) {
                     stkPushBtn.disabled = false;
@@ -375,7 +332,7 @@ function pollPaymentStatus(checkoutRequestID, totalAmount) {
 }
 
 // ============================================
-// LOAD PRODUCTS FROM SERVER
+// LOAD PRODUCTS
 // ============================================
 
 async function loadProducts() {
@@ -383,11 +340,7 @@ async function loadProducts() {
         const response = await fetch('/api/products');
         products = await response.json();
         console.log(`✅ Loaded ${products.length} products from server`);
-        
-        // Update category counts
         updateCategoryCounts();
-        
-        // Re-render all product sections
         renderFlashSales();
         renderProducts('featured-products', products, true);
         updateAllProducts();
@@ -408,19 +361,12 @@ function updateCategoryCounts() {
     });
 }
 
-// ============================================
-// RENDER PRODUCTS
-// ============================================
-
 function renderProducts(containerId, productList, isFeatured = false) {
     const container = document.getElementById(containerId);
     if (!container) return;
     
     let productsToShow = [...productList];
-    
-    if (isFeatured) {
-        productsToShow = productsToShow.slice(0, 8);
-    }
+    if (isFeatured) productsToShow = productsToShow.slice(0, 8);
     
     if (productsToShow.length === 0) {
         container.innerHTML = '<div style="text-align:center; padding:40px;">No products available. Add products in admin panel.</div>';
@@ -482,7 +428,7 @@ function renderFlashSales() {
 }
 
 // ============================================
-// SHOPPING CART FUNCTIONS
+// SHOPPING CART
 // ============================================
 
 window.addToCart = function(productId) {
@@ -532,11 +478,11 @@ function updateCartDisplay() {
                     <div class="cart-item-title">${item.name}</div>
                     <div class="cart-item-price">${formatPrice(item.price)}</div>
                     <div class="cart-item-quantity">
-                        <button class="quantity-btn" data-action="decrease" data-id="${item.id}" onclick="updateQuantity(${item.id}, 'decrease')">-</button>
+                        <button class="quantity-btn" onclick="updateQuantity(${item.id}, 'decrease')">-</button>
                         <span class="quantity-value">${item.quantity}</span>
-                        <button class="quantity-btn" data-action="increase" data-id="${item.id}" onclick="updateQuantity(${item.id}, 'increase')">+</button>
+                        <button class="quantity-btn" onclick="updateQuantity(${item.id}, 'increase')">+</button>
                     </div>
-                    <span class="remove-item" data-id="${item.id}" onclick="removeFromCart(${item.id})">Remove</span>
+                    <span class="remove-item" onclick="removeFromCart(${item.id})">Remove</span>
                 </div>
                 <div class="cart-item-total">${formatPrice(itemTotal)}</div>
             </div>
@@ -579,29 +525,18 @@ window.removeFromCart = function(id) {
 
 function startCountdown() {
     let hours = 23, minutes = 59, seconds = 59;
-    
     const updateTimer = () => {
         document.getElementById('hours').textContent = String(hours).padStart(2, '0');
         document.getElementById('minutes').textContent = String(minutes).padStart(2, '0');
         document.getElementById('seconds').textContent = String(seconds).padStart(2, '0');
-        
         if (seconds === 0) {
             if (minutes === 0) {
-                if (hours === 0) {
-                    hours = 24;
-                } else {
-                    hours--;
-                    minutes = 59;
-                }
-            } else {
-                minutes--;
-            }
+                if (hours === 0) hours = 24;
+                else { hours--; minutes = 59; }
+            } else minutes--;
             seconds = 59;
-        } else {
-            seconds--;
-        }
+        } else seconds--;
     };
-    
     updateTimer();
     setInterval(updateTimer, 1000);
 }
@@ -619,38 +554,23 @@ function initHeroSlider() {
     let interval;
     
     function showSlide(index) {
-        slides.forEach((slide, i) => {
-            slide.classList.toggle('active', i === index);
-        });
-        
+        slides.forEach((slide, i) => slide.classList.toggle('active', i === index));
         if (dotsContainer) {
             const dots = dotsContainer.querySelectorAll('.hero-dot');
-            dots.forEach((dot, i) => {
-                dot.classList.toggle('active', i === index);
-            });
+            dots.forEach((dot, i) => dot.classList.toggle('active', i === index));
         }
         currentSlide = index;
     }
     
-    function nextSlide() {
-        currentSlide = (currentSlide + 1) % slides.length;
-        showSlide(currentSlide);
-    }
-    
-    function prevSlide() {
-        currentSlide = (currentSlide - 1 + slides.length) % slides.length;
-        showSlide(currentSlide);
-    }
+    function nextSlide() { currentSlide = (currentSlide + 1) % slides.length; showSlide(currentSlide); }
+    function prevSlide() { currentSlide = (currentSlide - 1 + slides.length) % slides.length; showSlide(currentSlide); }
     
     if (dotsContainer) {
         slides.forEach((_, i) => {
             const dot = document.createElement('span');
             dot.classList.add('hero-dot');
             if (i === 0) dot.classList.add('active');
-            dot.addEventListener('click', () => {
-                showSlide(i);
-                resetInterval();
-            });
+            dot.addEventListener('click', () => { showSlide(i); resetInterval(); });
             dotsContainer.appendChild(dot);
         });
     }
@@ -658,11 +578,7 @@ function initHeroSlider() {
     if (prevBtn) prevBtn.addEventListener('click', () => { prevSlide(); resetInterval(); });
     if (nextBtn) nextBtn.addEventListener('click', () => { nextSlide(); resetInterval(); });
     
-    function resetInterval() {
-        clearInterval(interval);
-        interval = setInterval(nextSlide, 5000);
-    }
-    
+    function resetInterval() { clearInterval(interval); interval = setInterval(nextSlide, 5000); }
     interval = setInterval(nextSlide, 5000);
 }
 
@@ -677,24 +593,13 @@ function updateOrderSummary() {
     orderItemsContainer.innerHTML = cart.map(item => {
         const itemTotal = item.price * item.quantity;
         subtotal += itemTotal;
-        return `
-            <div class="order-item">
-                <span>${item.name} x ${item.quantity}</span>
-                <span>${formatPrice(itemTotal)}</span>
-            </div>
-        `;
+        return `<div class="order-item"><span>${item.name} x ${item.quantity}</span><span>${formatPrice(itemTotal)}</span></div>`;
     }).join('');
     
     const deliveryFee = subtotal > 5000 ? 0 : 200;
     const total = subtotal + deliveryFee;
     
-    orderItemsContainer.innerHTML += `
-        <div class="order-item delivery" style="border-top: 1px solid var(--border); margin-top: 10px; padding-top: 10px;">
-            <span>Delivery (Eldoret):</span>
-            <span>${formatPrice(deliveryFee)}</span>
-        </div>
-    `;
-    
+    orderItemsContainer.innerHTML += `<div class="order-item delivery" style="border-top: 1px solid var(--border); margin-top: 10px; padding-top: 10px;"><span>Delivery (Eldoret):</span><span>${formatPrice(deliveryFee)}</span></div>`;
     document.getElementById('order-total-amount').textContent = formatPrice(total);
 }
 
@@ -707,24 +612,13 @@ function updateAllProducts() {
     if (searchInput) currentSearch = searchInput.value;
     
     let filtered = [...products];
+    if (currentFilter !== 'all') filtered = filtered.filter(p => p.category === currentFilter);
+    if (currentSearch) filtered = filtered.filter(p => p.name.toLowerCase().includes(currentSearch.toLowerCase()));
     
-    if (currentFilter !== 'all') {
-        filtered = filtered.filter(p => p.category === currentFilter);
-    }
-    
-    if (currentSearch) {
-        filtered = filtered.filter(p => p.name.toLowerCase().includes(currentSearch.toLowerCase()));
-    }
-    
-    if (currentSort === 'price-low') {
-        filtered.sort((a, b) => a.price - b.price);
-    } else if (currentSort === 'price-high') {
-        filtered.sort((a, b) => b.price - a.price);
-    } else if (currentSort === 'name-asc') {
-        filtered.sort((a, b) => a.name.localeCompare(b.name));
-    } else if (currentSort === 'name-desc') {
-        filtered.sort((a, b) => b.name.localeCompare(a.name));
-    }
+    if (currentSort === 'price-low') filtered.sort((a, b) => a.price - b.price);
+    else if (currentSort === 'price-high') filtered.sort((a, b) => b.price - a.price);
+    else if (currentSort === 'name-asc') filtered.sort((a, b) => a.name.localeCompare(b.name));
+    else if (currentSort === 'name-desc') filtered.sort((a, b) => b.name.localeCompare(a.name));
     
     const toShow = filtered.slice(0, displayedProducts);
     const container = document.getElementById('all-products-grid');
@@ -736,33 +630,23 @@ function updateAllProducts() {
             container.innerHTML = '';
             return;
         }
-        
         if (noResults) noResults.style.display = 'none';
         
         container.innerHTML = toShow.map(product => `
             <div class="product-card">
                 ${product.badge ? `<div class="product-badge ${product.badge === 'flash' ? 'flash' : ''}">${product.badge === 'flash' ? '🔥 Flash Sale' : '✨ New'}</div>` : ''}
-                <div class="product-image">
-                    <img src="${product.image}" alt="${product.name}" onerror="this.src='https://via.placeholder.com/300x300?text=No+Image'">
-                </div>
+                <div class="product-image"><img src="${product.image}" alt="${product.name}" onerror="this.src='https://via.placeholder.com/300x300?text=No+Image'"></div>
                 <div class="product-info">
                     <h4 class="product-title">${product.name}</h4>
-                    <div class="product-price">
-                        <span class="current-price">${formatPrice(product.price)}</span>
-                        ${product.oldPrice ? `<span class="old-price">${formatPrice(product.oldPrice)}</span>` : ''}
-                    </div>
-                    <button class="add-to-cart-btn" data-id="${product.id}" onclick="addToCart(${product.id})">
-                        <i class="fas fa-shopping-cart"></i> Add to Cart
-                    </button>
+                    <div class="product-price"><span class="current-price">${formatPrice(product.price)}</span>${product.oldPrice ? `<span class="old-price">${formatPrice(product.oldPrice)}</span>` : ''}</div>
+                    <button class="add-to-cart-btn" onclick="addToCart(${product.id})"><i class="fas fa-shopping-cart"></i> Add to Cart</button>
                 </div>
             </div>
         `).join('');
     }
     
     const loadMoreBtn = document.getElementById('load-more-btn');
-    if (loadMoreBtn) {
-        loadMoreBtn.style.display = filtered.length > displayedProducts ? 'block' : 'none';
-    }
+    if (loadMoreBtn) loadMoreBtn.style.display = filtered.length > displayedProducts ? 'block' : 'none';
 }
 
 function initSearchAndFilters() {
@@ -771,39 +655,10 @@ function initSearchAndFilters() {
     const sortSelect = document.getElementById('sort-select');
     const loadMoreBtn = document.getElementById('load-more-btn');
     
-    if (searchBtn) {
-        searchBtn.addEventListener('click', () => {
-            currentSearch = searchInput.value;
-            displayedProducts = 12;
-            updateAllProducts();
-        });
-    }
-    
-    if (searchInput) {
-        searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                currentSearch = searchInput.value;
-                displayedProducts = 12;
-                updateAllProducts();
-            }
-        });
-    }
-    
-    if (sortSelect) {
-        sortSelect.addEventListener('change', () => {
-            currentSort = sortSelect.value;
-            displayedProducts = 12;
-            updateAllProducts();
-        });
-    }
-    
-    if (loadMoreBtn) {
-        loadMoreBtn.addEventListener('click', () => {
-            displayedProducts += 12;
-            updateAllProducts();
-        });
-    }
-    
+    if (searchBtn) searchBtn.addEventListener('click', () => { currentSearch = searchInput.value; displayedProducts = 12; updateAllProducts(); });
+    if (searchInput) searchInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { currentSearch = searchInput.value; displayedProducts = 12; updateAllProducts(); } });
+    if (sortSelect) sortSelect.addEventListener('change', () => { currentSort = sortSelect.value; displayedProducts = 12; updateAllProducts(); });
+    if (loadMoreBtn) loadMoreBtn.addEventListener('click', () => { displayedProducts += 12; updateAllProducts(); });
     updateAllProducts();
 }
 
@@ -814,17 +669,9 @@ function initSearchAndFilters() {
 function initMobileMenu() {
     const toggle = document.getElementById('mobile-menu-toggle');
     const categoryNav = document.querySelector('.category-menu');
-    
     if (toggle && categoryNav) {
-        toggle.addEventListener('click', () => {
-            categoryNav.classList.toggle('show');
-        });
-        
-        document.querySelectorAll('.category-menu a').forEach(link => {
-            link.addEventListener('click', () => {
-                categoryNav.classList.remove('show');
-            });
-        });
+        toggle.addEventListener('click', () => categoryNav.classList.toggle('show'));
+        document.querySelectorAll('.category-menu a').forEach(link => link.addEventListener('click', () => categoryNav.classList.remove('show')));
     }
 }
 
@@ -832,25 +679,38 @@ function initMobileMenu() {
 // IMAGE GALLERY FUNCTIONS
 // ============================================
 
-// Load all uploaded images for gallery
 async function loadUploadedImages() {
     try {
         const response = await fetch('/api/images');
         const data = await response.json();
-        
         const gallery = document.getElementById('image-gallery');
         if (gallery) {
             if (data.success && data.images && data.images.length > 0) {
-                gallery.innerHTML = data.images.map(image => `
-                    <div class="gallery-item" style="position: relative; border: 1px solid var(--border); border-radius: 8px; overflow: hidden;">
-                        <img src="${image.url}" alt="${image.name}" style="width: 100%; height: 100px; object-fit: cover;">
-                        <button class="copy-image-url" data-url="${image.url}" onclick="copyImageUrl('${image.url}')" style="position: absolute; bottom: 5px; right: 5px; background: var(--primary); color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 10px;">
-                            Copy URL
-                        </button>
-                    </div>
-                `).join('');
+                const productImages = data.images.filter(img => img.productNumber);
+                const otherImages = data.images.filter(img => !img.productNumber);
+                let html = '';
+                if (productImages.length > 0) {
+                    html += `<h5 style="grid-column: 1/-1; margin-top: 10px;">Product Images (product1 - product100):</h5>`;
+                    html += productImages.map(image => `
+                        <div class="gallery-item" style="position: relative; border: 1px solid var(--border); border-radius: 8px; overflow: hidden;">
+                            <img src="${image.url}" alt="${image.name}" style="width: 100%; height: 100px; object-fit: cover;">
+                            <div style="position: absolute; top: 5px; left: 5px; background: var(--primary); color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px;">Product ${image.productNumber}</div>
+                            <button class="copy-image-url" onclick="copyImageUrl('${image.url}')" style="position: absolute; bottom: 5px; right: 5px; background: var(--primary); color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 10px;">Copy URL</button>
+                        </div>
+                    `).join('');
+                }
+                if (otherImages.length > 0) {
+                    html += `<h5 style="grid-column: 1/-1; margin-top: 10px;">Other Images:</h5>`;
+                    html += otherImages.map(image => `
+                        <div class="gallery-item" style="position: relative; border: 1px solid var(--border); border-radius: 8px; overflow: hidden;">
+                            <img src="${image.url}" alt="${image.name}" style="width: 100%; height: 100px; object-fit: cover;">
+                            <button class="copy-image-url" onclick="copyImageUrl('${image.url}')" style="position: absolute; bottom: 5px; right: 5px; background: var(--primary); color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 10px;">Copy URL</button>
+                        </div>
+                    `).join('');
+                }
+                gallery.innerHTML = html;
             } else {
-                gallery.innerHTML = '<p style="grid-column: 1/-1; text-align: center;">No images uploaded yet. Upload some images above.</p>';
+                gallery.innerHTML = '<p style="grid-column: 1/-1; text-align: center;">No images uploaded yet. Upload images above.</p>';
             }
         }
     } catch (error) {
@@ -858,167 +718,130 @@ async function loadUploadedImages() {
     }
 }
 
-// Copy image URL to clipboard
 window.copyImageUrl = function(url) {
-    navigator.clipboard.writeText(url).then(() => {
-        showNotification('Image URL copied to clipboard!', 'success');
-    }).catch(() => {
-        showNotification('Failed to copy URL', 'error');
-    });
+    navigator.clipboard.writeText(url).then(() => showNotification('Image URL copied to clipboard!', 'success'))
+        .catch(() => showNotification('Failed to copy URL', 'error'));
 };
 
-// Preview bulk images before upload
 window.previewBulkImages = function(input) {
     const bulkPreview = document.getElementById('bulk-preview');
     bulkPreview.innerHTML = '';
-    const files = Array.from(input.files);
-    files.forEach(file => {
+    Array.from(input.files).forEach(file => {
         const reader = new FileReader();
-        reader.onload = (event) => {
+        reader.onload = (e) => {
             const img = document.createElement('img');
-            img.src = event.target.result;
-            img.style.width = '80px';
-            img.style.height = '80px';
-            img.style.objectFit = 'cover';
-            img.style.borderRadius = '8px';
+            img.src = e.target.result;
+            img.style.cssText = 'width: 80px; height: 80px; object-fit: cover; border-radius: 8px;';
             bulkPreview.appendChild(img);
         };
         reader.readAsDataURL(file);
     });
 };
 
-// Upload multiple images
-window.uploadMultipleImages = async function(event) {
+window.uploadBulkProductImages = async function(event) {
     event.preventDefault();
     const files = document.getElementById('bulk-images').files;
+    const startNumber = parseInt(document.getElementById('start-number').value) || 1;
     
-    if (files.length === 0) {
-        showNotification('Please select images to upload', 'error');
-        return;
-    }
+    if (files.length === 0) { showNotification('Please select images to upload', 'error'); return; }
+    if (startNumber + files.length - 1 > 100) { showNotification('Maximum product number is 100. Please adjust start number.', 'error'); return; }
     
     const formData = new FormData();
-    for (let i = 0; i < files.length; i++) {
-        formData.append('images', files[i]);
-    }
+    for (let i = 0; i < files.length; i++) formData.append('images', files[i]);
+    formData.append('startNumber', startNumber);
     
     const uploadBtn = event.target.querySelector('button[type="submit"]');
     uploadBtn.disabled = true;
     uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
     
     try {
-        const response = await fetch('/api/upload-multiple', {
-            method: 'POST',
-            body: formData
-        });
-        
+        const response = await fetch('/api/upload-bulk-products', { method: 'POST', body: formData });
         const data = await response.json();
-        
         if (data.success) {
             showNotification(data.message, 'success');
             document.getElementById('bulk-upload-form').reset();
             document.getElementById('bulk-preview').innerHTML = '';
             loadUploadedImages();
-        } else {
-            showNotification('Upload failed: ' + (data.error || 'Unknown error'), 'error');
-        }
-    } catch (error) {
-        console.error('Upload error:', error);
-        showNotification('Failed to upload images. Please try again.', 'error');
-    } finally {
-        uploadBtn.disabled = false;
-        uploadBtn.innerHTML = 'Upload Images';
-    }
+        } else showNotification('Upload failed: ' + (data.error || 'Unknown error'), 'error');
+    } catch (error) { showNotification('Failed to upload images.', 'error'); }
+    finally { uploadBtn.disabled = false; uploadBtn.innerHTML = 'Upload Product Images'; }
 };
 
-// Open image selector modal
-window.openImageSelector = function() {
-    const modal = document.createElement('div');
-    modal.className = 'image-selector-modal';
-    modal.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.8);
-        z-index: 3000;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    `;
+window.bulkCreateProducts = async function() {
+    const category = prompt('Enter category for all products (phones, laptops, tvs, audio, accessories, gaming):', 'accessories');
+    if (!category) return;
+    const price = prompt('Enter default price for all products (in KSh):', '1000');
+    if (!price) return;
+    const flash = confirm('Add as flash sale items?');
     
-    modal.innerHTML = `
-        <div style="background: white; width: 90%; max-width: 800px; max-height: 80vh; border-radius: 16px; overflow: hidden;">
-            <div style="padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between;">
-                <h3>Select Image from Gallery</h3>
-                <button onclick="this.closest('.image-selector-modal').remove()" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
-            </div>
-            <div id="image-selector-grid" style="padding: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 15px; max-height: 60vh; overflow-y: auto;">
-                Loading images...
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    loadImagesForSelector();
-};
-
-async function loadImagesForSelector() {
     try {
-        const response = await fetch('/api/images');
+        const response = await fetch('/api/bulk-create-products', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ category, price: parseInt(price), flash })
+        });
         const data = await response.json();
-        const grid = document.getElementById('image-selector-grid');
-        
-        if (data.success && data.images && data.images.length > 0) {
-            grid.innerHTML = data.images.map(image => `
-                <div style="cursor: pointer; border: 2px solid transparent; border-radius: 8px; overflow: hidden; transition: all 0.3s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='transparent'" onclick="selectImageForProduct('${image.url}')">
-                    <img src="${image.url}" style="width: 100%; height: 120px; object-fit: cover;">
-                    <p style="font-size: 10px; padding: 5px; text-align: center; word-break: break-all;">${image.name.substring(0, 20)}</p>
-                </div>
-            `).join('');
-        } else {
-            grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center;">No images uploaded yet. Please upload images first.</p>';
-        }
-    } catch (error) {
-        console.error('Error loading images:', error);
-        document.getElementById('image-selector-grid').innerHTML = '<p style="color: red;">Failed to load images</p>';
-    }
-}
-
-window.selectImageForProduct = function(imageUrl) {
-    const imagePreview = document.getElementById('image-preview');
-    imagePreview.innerHTML = `<img src="${imageUrl}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;">`;
-    
-    // Store the URL to be used when submitting
-    window.selectedImageUrl = imageUrl;
-    
-    // Close the modal
-    const modal = document.querySelector('.image-selector-modal');
-    if (modal) modal.remove();
-    
-    showNotification('Image selected!', 'success');
+        if (data.success) {
+            showNotification(data.message, 'success');
+            loadProducts();
+            loadProductsList();
+        } else showNotification('Failed to create products.', 'error');
+    } catch (error) { showNotification('Failed to create products.', 'error'); }
 };
 
-// Preview single image
 window.previewProductImage = function(input) {
     const imagePreview = document.getElementById('image-preview');
     imagePreview.innerHTML = '';
     const file = input.files[0];
     if (file) {
         const reader = new FileReader();
-        reader.onload = (event) => {
+        reader.onload = (e) => {
             const img = document.createElement('img');
-            img.src = event.target.result;
-            img.style.width = '80px';
-            img.style.height = '80px';
-            img.style.objectFit = 'cover';
-            img.style.borderRadius = '8px';
+            img.src = e.target.result;
+            img.style.cssText = 'width: 80px; height: 80px; object-fit: cover; border-radius: 8px;';
             imagePreview.appendChild(img);
         };
         reader.readAsDataURL(file);
     }
     window.selectedImageUrl = '';
+};
+
+window.openImageSelector = async function() {
+    const modal = document.createElement('div');
+    modal.className = 'image-selector-modal';
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 3000; display: flex; justify-content: center; align-items: center;';
+    modal.innerHTML = `
+        <div style="background: white; width: 90%; max-width: 800px; max-height: 80vh; border-radius: 16px; overflow: hidden;">
+            <div style="padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between;">
+                <h3>Select Image from Gallery</h3>
+                <button onclick="this.closest('.image-selector-modal').remove()" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+            </div>
+            <div id="image-selector-grid" style="padding: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 15px; max-height: 60vh; overflow-y: auto;">Loading images...</div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    
+    try {
+        const response = await fetch('/api/images');
+        const data = await response.json();
+        const grid = document.getElementById('image-selector-grid');
+        if (data.success && data.images && data.images.length > 0) {
+            grid.innerHTML = data.images.map(image => `
+                <div style="cursor: pointer; border: 2px solid transparent; border-radius: 8px; overflow: hidden;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='transparent'" onclick="selectImageForProduct('${image.url}')">
+                    <img src="${image.url}" style="width: 100%; height: 120px; object-fit: cover;">
+                    <p style="font-size: 10px; padding: 5px; text-align: center;">${image.name.substring(0, 20)}</p>
+                </div>
+            `).join('');
+        } else grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center;">No images uploaded yet.</p>';
+    } catch (error) { document.getElementById('image-selector-grid').innerHTML = '<p style="color: red;">Failed to load images</p>'; }
+};
+
+window.selectImageForProduct = function(imageUrl) {
+    const imagePreview = document.getElementById('image-preview');
+    imagePreview.innerHTML = `<img src="${imageUrl}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;">`;
+    window.selectedImageUrl = imageUrl;
+    document.querySelector('.image-selector-modal')?.remove();
+    showNotification('Image selected!', 'success');
 };
 
 // ============================================
@@ -1039,138 +862,84 @@ window.adminLogin = async function() {
     const username = document.getElementById('admin-username').value;
     const password = document.getElementById('admin-password').value;
     const adminLoginError = document.getElementById('admin-login-error');
-    
-    if (!username || !password) {
-        adminLoginError.textContent = 'Please enter username and password';
-        return;
-    }
-    
+    if (!username || !password) { adminLoginError.textContent = 'Please enter username and password'; return; }
     try {
         const response = await fetch('/api/admin/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, password })
         });
-        
         const data = await response.json();
-        
         if (data.success) {
             adminToken = data.token;
             document.getElementById('admin-login-form').style.display = 'none';
             document.getElementById('admin-content').style.display = 'block';
             loadProductsList();
             loadUploadedImages();
-        } else {
-            adminLoginError.textContent = data.message;
-        }
-    } catch (error) {
-        adminLoginError.textContent = 'Login failed. Please try again.';
-    }
+        } else adminLoginError.textContent = data.message;
+    } catch (error) { adminLoginError.textContent = 'Login failed. Please try again.'; }
 };
 
 window.switchAdminTab = function(tabId) {
-    document.querySelectorAll('.admin-tab').forEach(tab => {
-        tab.classList.remove('active');
-    });
-    document.querySelectorAll('.admin-tab-content').forEach(content => {
-        content.classList.remove('active');
-    });
-    
+    document.querySelectorAll('.admin-tab').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.admin-tab-content').forEach(content => content.classList.remove('active'));
     document.querySelector(`.admin-tab[data-tab="${tabId}"]`).classList.add('active');
     document.getElementById(tabId).classList.add('active');
 };
 
-// Load products list for management
 async function loadProductsList() {
     try {
         const response = await fetch('/api/products');
         const productsList = await response.json();
-        
         const container = document.getElementById('products-list');
         if (container) {
-            if (productsList.length === 0) {
-                container.innerHTML = '<p style="text-align: center; padding: 20px;">No products yet. Add your first product above.</p>';
-                return;
-            }
-            
+            if (productsList.length === 0) { container.innerHTML = '<p style="text-align: center; padding: 20px;">No products yet. Add your first product above.</p>'; return; }
             container.innerHTML = productsList.map(product => `
                 <div class="product-admin-item">
                     <img src="${product.image}" alt="${product.name}" onerror="this.src='https://via.placeholder.com/50x50?text=No+Image'">
-                    <div class="product-admin-info">
-                        <h5>${product.name}</h5>
-                        <p>${formatPrice(product.price)} | ${product.category}</p>
-                    </div>
-                    <button class="delete-product" data-id="${product.id}" onclick="deleteProduct(${product.id})">Delete</button>
+                    <div class="product-admin-info"><h5>${product.name}</h5><p>${formatPrice(product.price)} | ${product.category}</p></div>
+                    <button class="delete-product" onclick="deleteProduct(${product.id})">Delete</button>
                 </div>
             `).join('');
         }
-    } catch (error) {
-        console.error('Error loading products:', error);
-    }
+    } catch (error) { console.error('Error loading products:', error); }
 }
 
 window.deleteProduct = async function(id) {
     if (confirm('Are you sure you want to delete this product?')) {
         const response = await fetch(`/api/products/${id}`, { method: 'DELETE' });
         const data = await response.json();
-        if (data.success) {
-            showNotification('Product deleted successfully', 'success');
-            loadProductsList();
-            loadProducts();
-        }
+        if (data.success) { showNotification('Product deleted successfully', 'success'); loadProductsList(); loadProducts(); }
     }
 };
 
-// Add new product
 window.addNewProduct = async function(event) {
     event.preventDefault();
-    
     const name = document.getElementById('product-name').value;
     const category = document.getElementById('product-category').value;
     const price = document.getElementById('product-price').value;
     const oldPrice = document.getElementById('product-old-price').value;
     const flash = document.getElementById('product-flash').checked;
     const description = document.getElementById('product-description').value;
+    const productNumber = document.getElementById('product-number').value;
     const imageFile = document.getElementById('product-image').files[0];
     
     let imageUrl = window.selectedImageUrl || '';
-    
-    // If a new file was uploaded, upload it first
     if (imageFile) {
         const formData = new FormData();
         formData.append('image', imageFile);
-        
-        const uploadRes = await fetch('/api/upload-image', {
-            method: 'POST',
-            body: formData
-        });
-        
+        if (productNumber) formData.append('productNumber', productNumber);
+        const uploadRes = await fetch('/api/upload-product-image', { method: 'POST', body: formData });
         const uploadData = await uploadRes.json();
-        if (uploadData.success) {
-            imageUrl = uploadData.imageUrl;
-        }
+        if (uploadData.success) imageUrl = uploadData.imageUrl;
     }
-    
-    // If no image URL is set, show error
-    if (!imageUrl) {
-        showNotification('Please select an image for the product', 'error');
-        return;
-    }
+    if (!imageUrl) { showNotification('Please select an image for the product', 'error'); return; }
     
     const response = await fetch('/api/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            name, 
-            category, 
-            price, 
-            oldPrice, 
-            imageUrl, 
-            flash,
-            description
-        })
+        body: JSON.stringify({ name, category, price, oldPrice, imageUrl, flash, description, productNumber: productNumber || null })
     });
-    
     const data = await response.json();
     if (data.success) {
         showNotification('Product added successfully!', 'success');
@@ -1179,13 +948,11 @@ window.addNewProduct = async function(event) {
         window.selectedImageUrl = '';
         loadProductsList();
         loadProducts();
-    } else {
-        showNotification('Failed to add product', 'error');
-    }
+    } else showNotification('Failed to add product', 'error');
 };
 
 // ============================================
-// INITIALIZE EVERYTHING
+// INITIALIZE
 // ============================================
 
 async function init() {
@@ -1196,17 +963,11 @@ async function init() {
     initMobileMenu();
     updateCartCount();
     
-    // Close modals when clicking outside
     window.addEventListener('click', (e) => {
-        const cartModal = document.getElementById('cart-modal');
-        const checkoutModal = document.getElementById('checkout-modal');
-        const adminOverlay = document.getElementById('admin-panel-overlay');
-        
-        if (e.target === cartModal) cartModal.style.display = 'none';
-        if (e.target === checkoutModal) checkoutModal.style.display = 'none';
-        if (e.target === adminOverlay) adminOverlay.style.display = 'none';
+        if (e.target === document.getElementById('cart-modal')) document.getElementById('cart-modal').style.display = 'none';
+        if (e.target === document.getElementById('checkout-modal')) document.getElementById('checkout-modal').style.display = 'none';
+        if (e.target === document.getElementById('admin-panel-overlay')) document.getElementById('admin-panel-overlay').style.display = 'none';
     });
 }
 
-// Start everything when page loads
 document.addEventListener('DOMContentLoaded', init);
