@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Yetu Electronics | Best Electronics in Kenya</title>
-    <meta name="description" content="Shop the best electronics at Yetu - Phones, Laptops, TVs, Accessories and more. Best prices in Kenya with M-Pesa payment.">
+    <title>Yetu Electronics | Best Electronics in Eldoret</title>
+    <meta name="description" content="Shop the best electronics at Yetu - Phones, Laptops, TVs, Accessories and more. Best prices in Eldoret, Kenya with M-Pesa payment.">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -31,7 +31,7 @@
         <div class="logo">
             <a href="#home">
                 <h1>YETU<span>Electronics</span></h1>
-                <small>Best Deals in Kenya</small>
+                <small>Eldoret's Best Electronics Store</small>
             </a>
         </div>
         
@@ -43,7 +43,7 @@
         <div class="header-actions">
             <div class="location-picker">
                 <i class="fas fa-map-marker-alt"></i>
-                <span>Nairobi</span>
+                <span>Eldoret</span>
                 <i class="fas fa-chevron-down"></i>
             </div>
             <div class="cart-icon" id="cart-icon">
@@ -74,7 +74,7 @@
     </div>
 </nav>
 
-<!-- Hero Banner (Jumia Style) -->
+<!-- Hero Banner -->
 <section class="hero-banner" id="home">
     <div class="hero-slider" id="hero-slider">
         <div class="hero-slide active">
@@ -95,8 +95,8 @@
         </div>
         <div class="hero-slide">
             <div class="hero-content">
-                <h2>Free Delivery</h2>
-                <p>On orders above KSh 5,000 across Kenya</p>
+                <h2>Free Delivery Eldoret</h2>
+                <p>On orders above KSh 5,000 across Eldoret</p>
                 <button class="shop-now-btn">Shop Now</button>
             </div>
             <div class="hero-bg" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);"></div>
@@ -212,7 +212,7 @@
         <div class="benefits-grid">
             <div class="benefit-item">
                 <i class="fas fa-truck"></i>
-                <h4>Free Delivery</h4>
+                <h4>Free Delivery Eldoret</h4>
                 <p>On orders over KSh 5,000</p>
             </div>
             <div class="benefit-item">
@@ -228,7 +228,7 @@
             <div class="benefit-item">
                 <i class="fas fa-mobile-alt"></i>
                 <h4>M-Pesa Payment</h4>
-                <p>Pay securely with M-Pesa</p>
+                <p>Pay securely with M-Pesa STK Push</p>
             </div>
         </div>
     </div>
@@ -255,7 +255,7 @@
         <div class="footer-grid">
             <div class="footer-col">
                 <h3>YETU<span>Electronics</span></h3>
-                <p>Your trusted electronics store in Kenya. Quality products at the best prices.</p>
+                <p>Your trusted electronics store in Eldoret. Quality products at the best prices.</p>
                 <div class="social-links">
                     <a href="#"><i class="fab fa-facebook-f"></i></a>
                     <a href="#"><i class="fab fa-twitter"></i></a>
@@ -286,20 +286,18 @@
             <div class="footer-col">
                 <h4>Contact Info</h4>
                 <ul class="contact-info">
+                    <li><i class="fas fa-map-marker-alt"></i> Eldoret, Kenya</li>
                     <li><i class="fas fa-phone"></i> 0741 842 196</li>
                     <li><i class="fas fa-envelope"></i> sales@yetu.com</li>
-                    <li><i class="fas fa-map-marker-alt"></i> Nairobi, Kenya</li>
                 </ul>
                 <div class="payment-methods">
-                    <i class="fab fa-cc-visa"></i>
-                    <i class="fab fa-cc-mastercard"></i>
                     <i class="fas fa-mobile-alt"></i>
                     <span>M-PESA</span>
                 </div>
             </div>
         </div>
         <div class="footer-bottom">
-            <p>&copy; 2025 Yetu Electronics. All rights reserved. | Till Number: 5673977</p>
+            <p>&copy; 2025 Yetu Electronics, Eldoret. All rights reserved. | M-PESA Till: 5673977</p>
         </div>
     </div>
 </footer>
@@ -318,24 +316,23 @@
                 <span id="cart-subtotal">KSh 0</span>
             </div>
             <div class="cart-total">
-                <span>Delivery:</span>
-                <span>KSh 0</span>
+                <span>Delivery (Eldoret):</span>
+                <span id="delivery-fee">KSh 0</span>
             </div>
             <div class="cart-total grand-total">
                 <span>Total:</span>
                 <span id="cart-total">KSh 0</span>
             </div>
             <button id="checkout-btn" class="checkout-btn">Proceed to Checkout</button>
-            <p class="payment-note"><i class="fas fa-mobile-alt"></i> Pay with M-Pesa at checkout</p>
         </div>
     </div>
 </div>
 
-<!-- Checkout Modal -->
+<!-- Checkout Modal - M-Pesa Only -->
 <div id="checkout-modal" class="checkout-modal">
     <div class="checkout-modal-content">
         <div class="checkout-header">
-            <h3><i class="fas fa-credit-card"></i> Checkout</h3>
+            <h3><i class="fas fa-mobile-alt"></i> M-Pesa Payment</h3>
             <span class="checkout-close">&times;</span>
         </div>
         <div class="checkout-body">
@@ -349,48 +346,21 @@
             </div>
             
             <div class="payment-section">
-                <h4>Payment Method</h4>
-                <div class="payment-options">
-                    <div class="payment-option active" data-payment="mpesa">
-                        <i class="fas fa-mobile-alt"></i>
-                        <span>M-Pesa</span>
-                    </div>
-                    <div class="payment-option" data-payment="card">
-                        <i class="fab fa-cc-visa"></i>
-                        <span>Card</span>
-                    </div>
-                    <div class="payment-option" data-payment="cash">
-                        <i class="fas fa-money-bill-wave"></i>
-                        <span>Cash on Delivery</span>
-                    </div>
+                <h4>M-Pesa Payment</h4>
+                <div class="payment-info">
+                    <p><i class="fas fa-info-circle"></i> You will receive a payment request on your phone</p>
                 </div>
                 
-                <div id="mpesa-payment" class="payment-form active">
-                    <p class="payment-instruction">Complete payment via M-Pesa:</p>
-                    <div class="till-info-large">
-                        <i class="fas fa-phone-alt"></i>
-                        <span>Till Number: <strong>5673977</strong></span>
-                    </div>
-                    <div class="stk-push-section">
-                        <p>Or receive payment request:</p>
-                        <input type="tel" id="checkout-phone" placeholder="M-Pesa Phone Number" class="phone-input">
-                        <button id="stk-push-checkout" class="stk-btn">Send Payment Request</button>
-                    </div>
-                    <div class="manual-payment">
-                        <p>After payment, enter transaction code:</p>
-                        <input type="text" id="transaction-code" placeholder="M-Pesa Transaction Code" class="code-input">
-                        <button id="verify-transaction" class="verify-btn">Complete Order</button>
-                    </div>
+                <div class="stk-push-section">
+                    <label for="checkout-phone">M-Pesa Phone Number:</label>
+                    <input type="tel" id="checkout-phone" placeholder="e.g., 0712345678" class="phone-input">
+                    <p class="phone-hint">Format: 0712345678 or 254712345678</p>
+                    
+                    <button id="stk-push-checkout" class="stk-btn">
+                        <i class="fas fa-mobile-alt"></i> Pay with M-Pesa
+                    </button>
+                    
                     <div id="payment-status" class="payment-status"></div>
-                </div>
-                
-                <div id="card-payment" class="payment-form">
-                    <p>Card payment coming soon</p>
-                </div>
-                
-                <div id="cash-payment" class="payment-form">
-                    <p>Pay when you receive your order</p>
-                    <button id="confirm-cash-order" class="complete-order-btn">Place Order</button>
                 </div>
             </div>
         </div>
