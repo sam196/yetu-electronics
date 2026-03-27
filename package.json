@@ -1,7 +1,7 @@
 {
   "name": "yetu-electronics",
   "version": "1.0.0",
-  "description": "Yetu Electronics - Premium Electronics Ecommerce Store with M-Pesa",
+  "description": "Yetu Electronics - Premium Electronics Store in Eldoret, Kenya with M-Pesa STK Push",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
